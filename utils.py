@@ -9,6 +9,7 @@ import os
 from dotenv import load_dotenv
 import pyaudio
 from flask import Flask, Response,render_template
+import customtkinter as ctk
 
 
 
@@ -36,7 +37,8 @@ def init_live_transcription(deepgram: DeepgramClient, stream_url: str, language:
         print(f"transcription: {sentence}")
         
     def on_metadata(self, metadata, **kwargs):
-        print(f"\n\n{metadata}\n\n")
+        # print(f"\n\n{metadata}\n\n")
+        return
         
     def on_error(self, error, **kwargs):
         print(f"\n\n{error}\n\n")
@@ -46,7 +48,7 @@ def init_live_transcription(deepgram: DeepgramClient, stream_url: str, language:
     dg_connection.on(LiveTranscriptionEvents.Metadata, on_metadata)
     dg_connection.on(LiveTranscriptionEvents.Error, on_error)
     
-    config = LiveOptions(model="nova-2", language=language, channels=1, smart_format=False)
+    config = LiveOptions(model="nova-2", language=language, channels=1, smart_format=True)
     
     # STEP 6: Start the connection
     
@@ -104,20 +106,19 @@ def gen_wav_header(sampleRate, bitsPerSample, channels):
     o += (datasize).to_bytes(4,'little')                                    # (4byte) Data size in bytes
     return o
 
-def sound_stream():
+def sound_stream(device_index: int):
     # start Recording
         
     audio = pyaudio.PyAudio()
     
     
-        # Define audio config
+    # Define audio config
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 16000
     CHUNK = 1024
-    RECORD_SECONDS = 5
     BITS_PER_SAMPLE = 16
-    DEVICE_INDEX = 1
+    DEVICE_INDEX = device_index
     
     # Generate header
     wav_header = gen_wav_header(RATE, BITS_PER_SAMPLE, CHANNELS)
@@ -141,13 +142,13 @@ def sound_stream():
 
 
 
-def init_stream_audio(port):
+def init_stream_audio(port, device_index:int):
 
     app = Flask(__name__)
 
     @app.route("/audio")
     def audio():
-        return Response(sound_stream())
+        return Response(sound_stream(device_index))
 
     @app.route('/')
     def index():
@@ -156,8 +157,8 @@ def init_stream_audio(port):
     print(f"Audio streaming started at http://localhost:{port}/audio")
     app.run(debug=False, threaded=True,port=port)
     
-def start_audio_server(port):
-    stream_thread = threading.Thread(target=init_stream_audio, args=(port,))
+def start_audio_server(port, device_index:int):
+    stream_thread = threading.Thread(target=init_stream_audio, args=(port, device_index))
 
     stream_thread.daemon = True
     stream_thread.start()
@@ -167,4 +168,61 @@ def start_audio_server(port):
     print(f"Audio stream server started on port {port}")
     
     return stream_url
-    
+
+def get_api_info(p: pyaudio.PyAudio):
+    PREFERRED_HOST_API_NAME = 'Windows WASAPI'
+    api_info, api_index = None, 0
+    for i in range(p.get_host_api_count()):
+        current_api_info = p.get_host_api_info_by_index(i)
+        if i == 0:
+            api_info = current_api_info
+        else:
+            if current_api_info['name'] == PREFERRED_HOST_API_NAME:
+                api_info, api_index = current_api_info, i
+                break
+    return api_info, api_index
+
+def list_audio_devices(p: pyaudio.PyAudio):
+    PREFERRED_HOST_API_NAME = 'Windows WASAPI'
+    devices = []
+    api_info, api_index = get_api_info(p)
+    api_name = api_info['name']
+    if api_name != PREFERRED_HOST_API_NAME:
+        print(f'[WARNING] "{PREFERRED_HOST_API_NAME}" not available on this system, '
+            f'going with "{api_name}" instead')
+ 
+    numdevices = api_info.get('deviceCount')
+    for i in range(numdevices):
+        dev_info = p.get_device_info_by_host_api_device_index(api_index, i)
+        if dev_info.get('maxInputChannels') > 0:
+            devices.append(dev_info.get("name"))
+    return devices
+
+def select_input_device():
+    p = pyaudio.PyAudio()
+    device_list = list_audio_devices(p)
+    for i, device in enumerate(device_list):
+        print(f"{i + 1}. {device}")
+ 
+    selected_device_index = None
+    while True:
+        try:
+            selected_device_index = int(input("Please select an input device by entering its index: "))
+            if selected_device_index < 1 or selected_device_index > len(device_list):
+                raise ValueError("Invalid index. Please enter a valid index.")
+            break
+        except ValueError as ve:
+            print(ve)
+ 
+    return selected_device_index - 1  # Adjusting index to match Python's zero-based indexing
+
+def center_tkinter_window(window: ctk.CTk):
+    window.update_idletasks()
+    width = window.winfo_width()
+    height = window.winfo_height()
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    x = (screen_width - width) // 2
+    y = (screen_height - height) // 2
+    window.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+
