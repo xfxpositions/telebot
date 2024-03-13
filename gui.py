@@ -5,25 +5,14 @@ import numpy as np
 from tkinter import messagebox
 from azure.cognitiveservices.speech import SpeechConfig, SpeechRecognizer, AudioConfig, ResultReason, CancellationReason
 import threading
-from utils import center_tkinter_window, list_audio_devices
-
-# Pyaudio stream configs
-FORMAT = pyaudio.paInt16  # 16 bit per sample
-CHANNELS = 1
-RATE = 48000  # Sample rate
-CHUNK = 128  # Buffer size
-
-
+from utils import center_tkinter_window, list_audio_devices, init_deepgram, init_stream_audio, init_live_transcription
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-
-        # Azure Speech service settings
-        self.speech_key = "YourSpeechServiceKey"
-        self.service_region = "YourServiceRegion"
-        self.speech_config = SpeechConfig(subscription=self.speech_key, region=self.service_region)
-        self.speech_recognizer = None
-
+        
+        self.deepgram = init_deepgram()
+        self.stream_url = None
+        
         self.title('Ses Çıkış Ayarları')
         self.geometry('800x550')
         self.audio = pyaudio.PyAudio()
@@ -146,11 +135,9 @@ class App(ctk.CTk):
 
     def start_speech_recognition(self):
         if self.is_streaming:
-            # Create SpeechRecognizer instance
-            # Set AudioConfig to use the microphone stream
-            audio_config = AudioConfig(use_default_microphone=True)
-            self.speech_recognizer = SpeechRecognizer(speech_config=self.speech_config, audio_config=audio_config)
-
+            # Start audio streaming
+            self.stream_url = init_stream_audio(self.port, self.selected_device_index)
+            
             # Start the speech recognition in a new thread
             recognition_thread = threading.Thread(target=self.recognize, daemon=True)
             recognition_thread.start()
