@@ -9,7 +9,11 @@ import os
 from dotenv import load_dotenv
 import pyaudio
 from flask import Flask, Response,render_template
+import tkinter as tk
+from tkinter.scrolledtext import ScrolledText
 import customtkinter as ctk
+import requests
+import re
 
 
 
@@ -23,18 +27,21 @@ def init_deepgram():
     
     return deepgram
 
-def init_live_transcription(deepgram: DeepgramClient, stream_url: str, language: str):
+def init_live_transcription(deepgram: DeepgramClient, stream_url: str, language: str, transcription_textbox: ctk.CTkTextbox, stop: bool):
 
     # STEP 2: Create a websocket connection to Deepgram
     dg_connection = deepgram.listen.live.v("1")
 
     # STEP 3: Define the event handlers for the connection
     def on_message(self, result, **kwargs):
-        # print(f"result: {result}")
         sentence = result.channel.alternatives[0].transcript
         if len(sentence) == 0:
             return
         print(f"transcription: {sentence}")
+        # # Burada 'end' index'ini kullanarak metni sona ekliyoruz.
+        transcription_textbox.insert(tk.END, sentence + "\n")
+        # Eklenen metni görebilmek için otomatik kaydırmayı etkinleştir
+        transcription_textbox.see(tk.END)
         
     def on_metadata(self, metadata, **kwargs):
         # print(f"\n\n{metadata}\n\n")
@@ -63,7 +70,8 @@ def init_live_transcription(deepgram: DeepgramClient, stream_url: str, language:
         with httpx.stream("GET", stream_url) as r:
             for data in r.iter_bytes():
                 lock_exit.acquire()
-                if exit:
+                if stop:
+                    exit = True
                     break
                 lock_exit.release()
 
@@ -72,6 +80,7 @@ def init_live_transcription(deepgram: DeepgramClient, stream_url: str, language:
             
     myHttp = threading.Thread(target=myThread)
     myHttp.start()
+    
     # STEP 10: Wait for user input to stop recording
     input("Press Enter to stop recording...\n\n")
 
@@ -216,13 +225,65 @@ def select_input_device():
  
     return selected_device_index - 1  # Adjusting index to match Python's zero-based indexing
 
-def center_tkinter_window(window: ctk.CTk):
-    window.update_idletasks()
-    width = window.winfo_width()
-    height = window.winfo_height()
-    screen_width = window.winfo_screenwidth()
-    screen_height = window.winfo_screenheight()
-    x = (screen_width - width) // 2
-    y = (screen_height - height) // 2
-    window.geometry('{}x{}+{}+{}'.format(width, height, x, y))
 
+
+def make_openai_request_with_question(question):
+    """
+    Makes a request to the specified API with the given question and returns the raw data, prompt, and usage.
+    
+    Parameters:
+    - question (str): The question to be asked.
+    
+    Returns:
+    - dict: A dictionary containing raw data, prompt, and usage if successful, else error info.
+    """
+    # Load environment variables from .env file
+    load_dotenv()
+
+    # API URL and keys
+    BASE_URL = os.getenv("OPENAI_BASE_URL")
+    SEARCH_KEY = os.getenv("SEARCH_KEY")
+    OPENAI_KEY = os.getenv("OPENAI_KEY")
+
+    # Headers for the request
+    headers = {
+        'Content-Type': 'application/json',
+        'api-key': OPENAI_KEY
+    }
+
+    # Content and data for the request
+    content = f"sen Logo Yazılım şirketinde çalışan yardımcı bir botsun, sorulara her zaman Türkçe yanıt ver. Soru: {question}"
+    json_data = {
+        "messages": [
+            {"role": "system", "content": "Yardımsever botsun"},
+            {"role": "user", "content": content}
+        ],
+        "temperature": 0,
+        "dataSources": [
+            {
+                "type": "AzureCognitiveSearch",
+                "parameters": {
+                    "endpoint": "https://openaidemosearchservice.search.windows.net",
+                    "key": SEARCH_KEY,
+                    "indexName": "indexbuluterpdys"
+                }
+            }
+        ]
+    }
+
+    # Perform the request
+    response = requests.post(url=BASE_URL, headers=headers, json=json_data)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        data = response.json()
+        prompt = data['choices'][0]['message']['content']
+        usage = data['usage']
+        prompt = clean_prompt(prompt)
+        return {"raw_data": data, "prompt": prompt, "usage": usage}
+    else:
+        return {"error": f"Request failed! Status code: {response.status_code}, err: {response.content}"}
+
+def clean_prompt(text):
+    cleaned_text = re.sub(r'\[doc\d+\]', '', text)
+    return cleaned_text.strip()
