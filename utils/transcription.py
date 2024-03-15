@@ -10,12 +10,7 @@ from dotenv import load_dotenv
 import pyaudio
 from flask import Flask, Response,render_template
 import tkinter as tk
-from tkinter.scrolledtext import ScrolledText
-import customtkinter as ctk
-import requests
-import re
-
-
+from threading import Event
 
 def init_deepgram():
     
@@ -27,7 +22,7 @@ def init_deepgram():
     
     return deepgram
 
-def init_live_transcription(deepgram: DeepgramClient, stream_url: str, language: str, transcription_textbox: ctk.CTkTextbox, stop: bool):
+def init_live_transcription(deepgram: DeepgramClient, stream_url: str, language: str):
 
     # STEP 2: Create a websocket connection to Deepgram
     dg_connection = deepgram.listen.live.v("1")
@@ -38,13 +33,8 @@ def init_live_transcription(deepgram: DeepgramClient, stream_url: str, language:
         if len(sentence) == 0:
             return
         print(f"transcription: {sentence}")
-        # # Burada 'end' index'ini kullanarak metni sona ekliyoruz.
-        transcription_textbox.insert(tk.END, sentence + "\n")
-        # Eklenen metni görebilmek için otomatik kaydırmayı etkinleştir
-        transcription_textbox.see(tk.END)
-        
+
     def on_metadata(self, metadata, **kwargs):
-        # print(f"\n\n{metadata}\n\n")
         return
         
     def on_error(self, error, **kwargs):
@@ -70,8 +60,7 @@ def init_live_transcription(deepgram: DeepgramClient, stream_url: str, language:
         with httpx.stream("GET", stream_url) as r:
             for data in r.iter_bytes():
                 lock_exit.acquire()
-                if stop:
-                    exit = True
+                if exit:
                     break
                 lock_exit.release()
 
@@ -151,6 +140,7 @@ def sound_stream(device_index: int):
 
 
 
+
 def init_stream_audio(port, device_index:int):
 
     app = Flask(__name__)
@@ -164,19 +154,31 @@ def init_stream_audio(port, device_index:int):
         """Video streaming home page."""
         return render_template('index.html')
     print(f"Audio streaming started at http://localhost:{port}/audio")
-    app.run(debug=False, threaded=True,port=port)
+    app.run(debug=False, threaded=True, port=port)
     
-def start_audio_server(port, device_index:int):
-    stream_thread = threading.Thread(target=init_stream_audio, args=(port, device_index))
+def start_audio_server(port, device_index: int, server_ready_event: Event):
+    def run_server():
+        app = Flask(__name__)
 
+        @app.route("/audio")
+        def audio():
+            return Response(sound_stream(device_index))
+
+        @app.route('/')
+        def index():
+            """Video streaming home page."""
+            return render_template('index.html')
+
+        @app.before
+        def activate_server_ready():
+            server_ready_event.set()
+
+        print(f"Audio streaming started at http://localhost:{port}/audio")
+        app.run(debug=False, threaded=True, port=port)
+
+    stream_thread = threading.Thread(target=run_server)
     stream_thread.daemon = True
     stream_thread.start()
-    
-    stream_url = f"http://localhost:{port}/audio"
-    
-    print(f"Audio stream server started on port {port}")
-    
-    return stream_url
 
 def get_api_info(p: pyaudio.PyAudio):
     PREFERRED_HOST_API_NAME = 'Windows WASAPI'
@@ -224,66 +226,3 @@ def select_input_device():
             print(ve)
  
     return selected_device_index - 1  # Adjusting index to match Python's zero-based indexing
-
-
-
-def make_openai_request_with_question(question):
-    """
-    Makes a request to the specified API with the given question and returns the raw data, prompt, and usage.
-    
-    Parameters:
-    - question (str): The question to be asked.
-    
-    Returns:
-    - dict: A dictionary containing raw data, prompt, and usage if successful, else error info.
-    """
-    # Load environment variables from .env file
-    load_dotenv()
-
-    # API URL and keys
-    BASE_URL = os.getenv("OPENAI_BASE_URL")
-    SEARCH_KEY = os.getenv("SEARCH_KEY")
-    OPENAI_KEY = os.getenv("OPENAI_KEY")
-
-    # Headers for the request
-    headers = {
-        'Content-Type': 'application/json',
-        'api-key': OPENAI_KEY
-    }
-
-    # Content and data for the request
-    content = f"sen Logo Yazılım şirketinde çalışan yardımcı bir botsun, sorulara her zaman Türkçe yanıt ver. Soru: {question}"
-    json_data = {
-        "messages": [
-            {"role": "system", "content": "Yardımsever botsun"},
-            {"role": "user", "content": content}
-        ],
-        "temperature": 0,
-        "dataSources": [
-            {
-                "type": "AzureCognitiveSearch",
-                "parameters": {
-                    "endpoint": "https://openaidemosearchservice.search.windows.net",
-                    "key": SEARCH_KEY,
-                    "indexName": "indexbuluterpdys"
-                }
-            }
-        ]
-    }
-
-    # Perform the request
-    response = requests.post(url=BASE_URL, headers=headers, json=json_data)
-
-    # Check if the request was successful
-    if response.status_code == 200:
-        data = response.json()
-        prompt = data['choices'][0]['message']['content']
-        usage = data['usage']
-        prompt = clean_prompt(prompt)
-        return {"raw_data": data, "prompt": prompt, "usage": usage}
-    else:
-        return {"error": f"Request failed! Status code: {response.status_code}, err: {response.content}"}
-
-def clean_prompt(text):
-    cleaned_text = re.sub(r'\[doc\d+\]', '', text)
-    return cleaned_text.strip()

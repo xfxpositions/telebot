@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
-from utils import make_openai_request_with_question, list_audio_devices
+from utils.transcription import list_audio_devices, start_audio_server, init_deepgram, init_live_transcription
+from utils.kbase import make_openai_request_with_question
 import threading
 import pyaudio
 
@@ -27,8 +28,31 @@ root.grid_rowconfigure(1, weight=1)
 root.grid_columnconfigure(0, weight=1)
 root.grid_columnconfigure(1, weight=1)
 
+# VARIABLES
+# -------------------------
+transcription_running = False
+first_run = True
+selected_input_device_index = 0
+deepgram = init_deepgram()
+audio_server_port = 5001
+audio_stream_url = f"http://localhost:5001/audio"
+
 # FUNCTIONS
 # -------------------------
+
+def start_audio_stream():
+    start_audio_server(port=audio_server_port, device_index=selected_input_device_index)
+
+def start_transcription():
+        # Start the transcription
+        transcription_running = True
+
+        # Start audio stream
+        audio_server_thread = threading.Thread(target=start_audio_server, daemon=True)
+        audio_server_thread.start()
+
+        # Start the live transcription
+        init_live_transcription(deepgram, stream_url=audio_stream_url, language="tr", transcription_textbox=transcription_text, stop=not transcription_running)
 
 # Prints the size of the root window every 500 milliseconds.
 def print_size():
@@ -39,6 +63,8 @@ def print_size():
 def clear_text():
     transcription_text.delete("1.0", tk.END)
     error_message_text.delete("1.0", tk.END)
+    prompt_message_text.delete("1.0", tk.END)
+    
 
 # Copies the content of the transcription_text widget to the clipboard.
 def copy_text():
@@ -48,6 +74,9 @@ def copy_text():
 
 # Searches for the provided text in the knowledge base.
 def search_kb():
+    # Clear the past prompt
+    prompt_message_text.delete("1.0", tk.END)
+
     textbox = prompt_message_text
     
     # Get the text from textbox
@@ -216,7 +245,7 @@ right_buttons_frame = tk.Frame(buttons_frame)  # Frame for right-aligned buttons
 right_buttons_frame.pack(side="right")  # Align to the right
 
 # Position buttons appropriately
-start_stop_button = tk.Button(transcription_frame, text="Start/Stop")
+start_stop_button = tk.Button(transcription_frame, text="Start/Stop", command=start_transcription)
 start_stop_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
 
 clear_button = tk.Button(buttons_frame, text="Clear", command=clear_text)
