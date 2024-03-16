@@ -22,70 +22,69 @@ def init_deepgram():
     
     return deepgram
 
-def init_live_transcription(deepgram: DeepgramClient, stream_url: str, language: str):
+def init_live_transcription(deepgram: DeepgramClient, stream_url: str, language: str, textbox, toggle_event: threading.Event):
+    print("LIVE TRANSCRIPTION FUNCTION WORKING")
 
-    # STEP 2: Create a websocket connection to Deepgram
-    dg_connection = deepgram.listen.live.v("1")
+    # STEP 2: Define a function to handle streaming and transcription
+    def handle_stream():
+        dg_connection = deepgram.listen.live.v("1")
 
-    # STEP 3: Define the event handlers for the connection
-    def on_message(self, result, **kwargs):
-        sentence = result.channel.alternatives[0].transcript
-        if len(sentence) == 0:
+        def on_message(self, result, **kwargs):
+            sentence = result.channel.alternatives[0].transcript
+            if len(sentence) == 0:
+                return
+            print(f"transcription: {sentence}")
+
+            if textbox is not None:
+                textbox.insert(tk.END, f"\n{sentence}")
+
+        def on_metadata(self, metadata, **kwargs):
             return
-        print(f"transcription: {sentence}")
 
-    def on_metadata(self, metadata, **kwargs):
-        return
-        
-    def on_error(self, error, **kwargs):
-        print(f"\n\n{error}\n\n")
-        
-    # STEP 4: Register the event handlers
-    dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
-    dg_connection.on(LiveTranscriptionEvents.Metadata, on_metadata)
-    dg_connection.on(LiveTranscriptionEvents.Error, on_error)
-    
-    config = LiveOptions(model="nova-2", language=language, channels=1, smart_format=True)
-    
-    # STEP 6: Start the connection
-    
-    dg_connection.start(config)
-    
-    # STEP 7: Create a lock and a flag for thread synchronization
-    lock_exit = threading.Lock()
-    exit = False
-    
-    # STEP 8: Define a thread that streams the audio and sends it to Deepgram
-    def myThread():
-        with httpx.stream("GET", stream_url) as r:
-            for data in r.iter_bytes():
-                lock_exit.acquire()
-                if exit:
-                    break
-                lock_exit.release()
+        def on_error(self, error, **kwargs):
+            print(f"\n\n{error}\n\n")
 
-                dg_connection.send(data)
-            # STEP 9: Start the thread
-            
-    myHttp = threading.Thread(target=myThread)
-    myHttp.start()
-    
-    # STEP 10: Wait for user input to stop recording
-    input("Press Enter to stop recording...\n\n")
+        dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+        dg_connection.on(LiveTranscriptionEvents.Metadata, on_metadata)
+        dg_connection.on(LiveTranscriptionEvents.Error, on_error)
 
-    # STEP 11: Set the exit flag to True to stop the thread
-    lock_exit.acquire()
-    exit = True
-    lock_exit.release()
+        config = LiveOptions(model="nova-2", language=language, channels=1, smart_format=True)
+        dg_connection.start(config)
 
-    # STEP 12: Wait for the thread to finish
-    myHttp.join()
+        def stream_audio():
+            with httpx.stream("GET", stream_url) as r:
+                for data in r.iter_bytes():
+                    if toggle_event.is_set():
+                        break
+                    dg_connection.send(data)
 
-    # STEP 13: Close the connection to Deepgram
-    dg_connection.finish()
+            dg_connection.finish()
+            print("Finished Streaming")
 
-    print("Finished")
-    
+        audio_thread = threading.Thread(target=stream_audio)
+        audio_thread.start()
+        return audio_thread
+
+    # Initialize control variables
+    audio_thread = None
+    toggle_event = threading.Event()
+
+    # STEP 3: Define a toggle function to start or stop transcription
+    def toggle_transcription():
+        nonlocal audio_thread
+        if audio_thread is None or not audio_thread.is_alive():
+            # Clear the event to start transcription
+            toggle_event.clear()
+            audio_thread = handle_stream()
+            print("Transcription started.")
+        else:
+            # Set the event to stop transcription
+            toggle_event.set()
+            audio_thread.join()
+            audio_thread = None
+            print("Transcription stopped.")
+
+    return toggle_transcription
     
 def gen_wav_header(sampleRate, bitsPerSample, channels):
     datasize = 2000*10**6
@@ -138,47 +137,41 @@ def sound_stream(device_index: int):
             data = stream.read(CHUNK)
         yield(data)
 
-
-
-
-def init_stream_audio(port, device_index:int):
-
+def init_stream_audio(port, device_index:int, server_ready_event):
+ 
     app = Flask(__name__)
-
+ 
     @app.route("/audio")
     def audio():
         return Response(sound_stream(device_index))
-
+ 
     @app.route('/')
     def index():
         """Video streaming home page."""
         return render_template('index.html')
     print(f"Audio streaming started at http://localhost:{port}/audio")
+     
+    # Server is about to start, signal the main thread
+    server_ready_event.set()
+
     app.run(debug=False, threaded=True, port=port)
     
-def start_audio_server(port, device_index: int, server_ready_event: Event):
-    def run_server():
-        app = Flask(__name__)
-
-        @app.route("/audio")
-        def audio():
-            return Response(sound_stream(device_index))
-
-        @app.route('/')
-        def index():
-            """Video streaming home page."""
-            return render_template('index.html')
-
-        @app.before
-        def activate_server_ready():
-            server_ready_event.set()
-
-        print(f"Audio streaming started at http://localhost:{port}/audio")
-        app.run(debug=False, threaded=True, port=port)
-
-    stream_thread = threading.Thread(target=run_server)
+def start_audio_server(port, device_index:int):
+    server_ready_event = threading.Event()
+    stream_thread = threading.Thread(target=init_stream_audio, args=(port, device_index, server_ready_event))
+    
     stream_thread.daemon = True
     stream_thread.start()
+
+    print("waiting the server run")
+
+    # Wait here until the event is set, indicating the server is ready
+    server_ready_event.wait()
+   
+    stream_url = f"http://localhost:{port}/audio"
+    print(f"Audio stream server started on port {port}")
+   
+    return stream_url
 
 def get_api_info(p: pyaudio.PyAudio):
     PREFERRED_HOST_API_NAME = 'Windows WASAPI'

@@ -4,6 +4,7 @@ from tkinter import messagebox
 from utils.transcription import list_audio_devices, start_audio_server, init_deepgram, init_live_transcription
 from utils.kbase import make_openai_request_with_question
 import threading
+from threading import Event
 import pyaudio
 
 # CONFIG
@@ -36,24 +37,37 @@ selected_input_device_index = 0
 deepgram = init_deepgram()
 audio_server_port = 5001
 audio_stream_url = f"http://localhost:5001/audio"
+# Initialize the toggle event and transcription toggle function at a global scope
+toggle_event = Event()
+toggle_transcription = None
 
 # FUNCTIONS
 # -------------------------
 
-def start_audio_stream():
-    start_audio_server(port=audio_server_port, device_index=selected_input_device_index)
+def init_transcription():
+    global toggle_transcription
+    # Only initialize once
+    if toggle_transcription is None:
+         # Start audio stream
+        audio_stream_url = start_audio_server(port=5001, device_index=selected_input_device_index)
+        toggle_transcription = init_live_transcription(deepgram, stream_url=audio_stream_url, language="tr", textbox=transcription_text, toggle_event=toggle_event)
+
 
 def start_transcription():
-        # Start the transcription
-        transcription_running = True
+    global transcription_running, first_run
+    
+    if first_run:
+        init_transcription()
+        first_run = False
+    
+    # Toggle the transcription state
+    toggle_transcription()
 
-        # Start audio stream
-        audio_server_thread = threading.Thread(target=start_audio_server, daemon=True)
-        audio_server_thread.start()
+    # Update the transcription running state and button text
+    transcription_running = not transcription_running
+    start_stop_button.config(text="Stop" if transcription_running else "Start")
 
-        # Start the live transcription
-        init_live_transcription(deepgram, stream_url=audio_stream_url, language="tr", transcription_textbox=transcription_text, stop=not transcription_running)
-
+    
 # Prints the size of the root window every 500 milliseconds.
 def print_size():
     print("Window Size: {}x{}".format(root.winfo_width(), root.winfo_height()))
