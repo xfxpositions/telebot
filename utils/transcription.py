@@ -187,6 +187,8 @@ def get_api_info(p: pyaudio.PyAudio):
     return api_info, api_index
 
 def list_audio_devices(p: pyaudio.PyAudio):
+
+    
     PREFERRED_HOST_API_NAME = 'Windows WASAPI'
     devices = []
     api_info, api_index = get_api_info(p)
@@ -202,7 +204,26 @@ def list_audio_devices(p: pyaudio.PyAudio):
             devices.append(dev_info.get("name"))
     return devices
 
+
+def list_audio_output_devices(p: pyaudio.PyAudio):
+
+    PREFERRED_HOST_API_NAME = 'Windows WASAPI'
+    devices = []
+    api_info, api_index = get_api_info(p)
+    api_name = api_info['name']
+    if api_name != PREFERRED_HOST_API_NAME:
+        print(f'[WARNING] "{PREFERRED_HOST_API_NAME}" not available on this system, '
+            f'going with "{api_name}" instead')
+ 
+    numdevices = api_info.get('deviceCount')
+    for i in range(numdevices):
+        dev_info = p.get_device_info_by_host_api_device_index(api_index, i)
+        if dev_info.get('maxOutputChannels') > 0:
+            devices.append(dev_info.get("name"))
+    return devices
+
 def select_input_device():
+
     p = pyaudio.PyAudio()
     device_list = list_audio_devices(p)
     for i, device in enumerate(device_list):
@@ -219,3 +240,36 @@ def select_input_device():
             print(ve)
  
     return selected_device_index - 1  # Adjusting index to match Python's zero-based indexing
+
+
+def get_audio_device_index(device_name):
+    p = pyaudio.PyAudio()
+    for i in range(p.get_device_count()):
+        dev_info = p.get_device_info_by_index(i)
+        if dev_info['name'] == device_name:
+            return i
+    return None
+
+def get_input_device_index(device_name, audio):
+    input_devices = list_audio_devices(audio)
+    
+    n = 0
+    
+    for device in input_devices:
+        if device == device_name:
+            return n
+        n+=1
+    
+    return 0
+
+def get_output_device_index(device_name, audio):
+    input_devices = list_audio_output_devices(audio)
+    
+    n = 0
+    
+    for device in input_devices:
+        if device == device_name:
+            return n
+        n+=1
+    
+    return 0
