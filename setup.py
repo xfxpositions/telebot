@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='logo_telebot',
+    name='logo_telebo1t',
     version='0.2',
     packages=find_packages(),
     install_requires=[
