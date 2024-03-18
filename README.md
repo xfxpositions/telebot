@@ -4,6 +4,17 @@
 
 ## Installation:
 
+### Download the binary
+
+```
+- Go to the releases
+- Download the setup.exe
+- Execute it
+- Done.
+```
+
+### Run from source
+
 ```sh
 pip3 install -r requirements.txt
 ```
@@ -19,15 +30,19 @@ python main.py
 ### Gui
 
 ```
-not implemented :(
+python gui.py
 ```
 
 ## Notes
 
+- only works in windows 10+
+
 ## Who made it?
+
+Yusuf Karaca
+Sinan Yalcin
+Bora Bulus
 
 ## License
 
-```
-
-```
+All rights reserved to the Logo Software. Please check out the LICENSE file
