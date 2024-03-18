@@ -203,7 +203,8 @@ def list_audio_devices(p: pyaudio.PyAudio):
     for i in range(numdevices):
         dev_info = p.get_device_info_by_host_api_device_index(api_index, i)
         if dev_info.get('maxInputChannels') > 0:
-            devices.append(dev_info.get("name"))
+            entry = (dev_info.get("name"), dev_info.get("index"))
+            devices.append(entry)
     return devices
 
 

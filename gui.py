@@ -62,30 +62,63 @@ toggle_transcription = None
 # FUNCTIONS
 # -------------------------
 
-# Applies the selected settings.
-def apply_settings(input_device, output_device, port, auto_port, settings_window):
-    global selected_input_device_index, selected_output_device_index, selected_input_device_name, selected_output_device_name, audio_server_port, first_run
+def show_general_settings():
+    messagebox.showinfo("General Settings", "This is the General Settings section.")
 
-    # Convert auto_port to the appropriate port setting
+def show_about():
+    about_window = tk.Toplevel(root)
+    about_window.geometry("300x300")
+    center_window(about_window)
+    about_window.title("About")
+    
+    tk.Label(about_window, text="Logo Telebot", font=("Arial", 16)).pack(pady=(10, 0))
+    tk.Label(about_window, text="Version: 0.2", font=("Arial", 12)).pack(pady=10)
+    tk.Label(about_window, text="Contributors:\n\nYusuf Karaca\nSinan Yalcinkaya\nBora Bulus", font=("Arial", 12)).pack(pady=10)
+    
+    view_license_btn = tk.Button(about_window, text="View License", command=open_license_file)
+    view_license_btn.pack(pady=(5, 10))
+
+def open_license_file():
+    try:
+        with open("LICENSE", "r") as file:
+            license_text = file.read()
+        messagebox.showinfo("License", license_text)
+    except FileNotFoundError:
+        messagebox.showerror("Error", "License file not found.")
+
+def exit_app():
+    root.destroy()
+# Applies the selected settings.
+def apply_settings(input_device_name, output_device_name, port, auto_port, settings_window):
+    global selected_input_device_index, selected_output_device_index, selected_input_device_name, selected_output_device_name, audio_server_port
+
+    # Retrieve the full device information lists again to find the selected devices' indices
+    input_devices = list_audio_devices(p=audio)
+    output_devices = list_audio_output_devices(p=audio)
+
+    # Find the index for the selected input device
+    selected_input_device_info = next((device for device in input_devices if device[0] == input_device_name), None)
+    selected_input_device_index = selected_input_device_info[1] if selected_input_device_info else None
+    
+    # Find the index for the selected output device
+    selected_output_device_info = next((device for device in output_devices if device[0] == output_device_name), None)
+    selected_output_device_index = selected_output_device_info[1] if selected_output_device_info else None
+
     new_port = "Auto" if auto_port else port
-    # Check if there's a change in the settings or if it's not the first run
-    settings_changed = (input_device != selected_input_device_name or
-                        output_device != selected_output_device_name or
+    settings_changed = (input_device_name != selected_input_device_name or
+                        output_device_name != selected_output_device_name or
                         new_port != audio_server_port)
+
     need_restart = settings_changed
 
-    selected_input_device_index = get_audio_device_index(input_device, audio)
-    selected_output_device_index = get_audio_device_index(output_device, audio)
-    selected_input_device_name = input_device
-    selected_output_device_name = output_device
+    selected_input_device_name = input_device_name
+    selected_output_device_name = output_device_name
     audio_server_port = new_port
     
-    selected_input_device_index = find_device_index_sd(selected_input_device_name)
-
     settings = {
-        "input_device": input_device,
+        "input_device": selected_input_device_name,
         "input_device_index": selected_input_device_index,
-        "output_device": output_device,
+        "output_device": selected_output_device_name,
         "output_device_index": selected_output_device_index,
         "port": new_port,
     }
@@ -150,7 +183,8 @@ def clear_text():
 # Copies the content of the transcription_text widget to the clipboard.
 def copy_text():
     root.clipboard_clear()
-    selected_text = transcription_text.get("1.0", tk.END)
+    selected_text = f"transcrioption: {transcription_text.get('1.0', tk.END)}, question: {error_message_text.get('1.0', tk.END)}, prompt: {prompt_message_text.get('1.0', tk.END)}"
+    
     root.clipboard_append(selected_text)
 
 # Searches for the provided text in the knowledge base.
@@ -190,23 +224,17 @@ def open_settings_window():
 
     selected_input_device_name = settings["input_device"]
     selected_output_device_name = settings["output_device"]
-
     audio_server_port = settings["port"]
-
     
     # Initialize the settings window
     settings_window = tk.Toplevel(root)
     settings_window.title("Settings")
-    settings_window.geometry("500x400")  # Adjust the size based on the content
-    settings_window.grab_set()  # Makes the settings window modal
-    
-    # Center the window at the start
-    center_window(settings_window)
+    settings_window.geometry("500x400")  
+    settings_window.grab_set()  
     
     content_frame = tk.Frame(settings_window)
     content_frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
 
-    # Settings Title
     settings_label = tk.Label(content_frame, text="Settings", font=("Arial", 14))
     settings_label.pack(pady=(0, 10))
 
@@ -214,30 +242,24 @@ def open_settings_window():
     audio_input_label = tk.Label(content_frame, text="Audio Input Devices:", font=("Arial", 10))
     audio_input_label.pack()
 
-    # Get input devices
-    # audio_input_devices = list_audio_devices(p=audio)
-    audio_input_devices = list_input_devices_sd()
+    audio_input_devices = list_audio_devices(p=audio)
     
     selected_input_device = tk.StringVar(settings_window)
     selected_input_device.set(selected_input_device_name)
 
-    # Input menu
-    audio_input_menu = tk.OptionMenu(content_frame, selected_input_device, *audio_input_devices)
+    audio_input_menu = tk.OptionMenu(content_frame, selected_input_device, *[device[0] for device in audio_input_devices])
     audio_input_menu.pack(pady=(10, 20))
 
-    # AUDIO OUTPUT DEVICES SECTION
+    # AUDIO OUTPUT DEVICES SECTION (Assuming similar function `list_audio_output_devices` returns the same format)
     audio_output_label = tk.Label(content_frame, text="Audio Output Devices:", font=("Arial", 10))
     audio_output_label.pack()
 
-    # List the output devices
     audio_output_devices = list_audio_output_devices(p=audio)
-
-    # Declare a variable for output device name
+    
     selected_output_device = tk.StringVar(settings_window)
     selected_output_device.set(selected_output_device_name)
 
-    # Audio output menu for selecting
-    audio_output_menu = tk.OptionMenu(content_frame, selected_output_device, *audio_output_devices)
+    audio_output_menu = tk.OptionMenu(content_frame, selected_output_device, *[device[0] for device in audio_output_devices])
     audio_output_menu.pack(pady=(10, 20))
 
     # ADVANCED SETTINGS SECTION
@@ -292,6 +314,31 @@ def toggle_auto_port(entry, auto_var):
 
 # COMPONENTS
 # --------------------------
+
+# Menubar
+
+# Create a menubar
+menubar = tk.Menu(root)
+
+# File menu
+menu_file = tk.Menu(menubar, tearoff=0)
+menu_file.add_command(label="Exit", command=exit_app)
+menubar.add_cascade(label="File", menu=menu_file)
+
+# Settings menu with a submenu
+menu_settings = tk.Menu(menubar, tearoff=0)
+submenu_general_settings = tk.Menu(menu_settings, tearoff=0)
+submenu_general_settings.add_command(label="General", command=open_settings_window)
+menu_settings.add_cascade(label="Settings", menu=submenu_general_settings)
+menubar.add_cascade(label="Settings", menu=menu_settings)
+
+# Help menu
+menu_help = tk.Menu(menubar, tearoff=0)
+menu_help.add_command(label="About", command=show_about)
+menubar.add_cascade(label="Help", menu=menu_help)
+
+# Display the menu
+root.config(menu=menubar)
 
 # Conversation frame setup
 transcription_frame = tk.LabelFrame(root, text="Transcription:")
@@ -357,8 +404,10 @@ help_button.pack(side="left", padx=5, pady=5)
 settings_button.pack(side="left", padx=5, pady=5)
 exit_button.pack(side="left", padx=5, pady=5)
 
+
+
 # Center the window before start
 center_window(root)
 
-# Run the application
-root.mainloop()
+if __name__ == "__main__":
+    root.mainloop()
