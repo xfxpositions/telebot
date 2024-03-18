@@ -86,6 +86,7 @@ def show_about():
     about_window.geometry("300x300")
     center_window(about_window)
     about_window.title("About")
+    about_window.resizable(False, False)
 
     # Display application information
     tk.Label(about_window, text="Logo Telebot", font=("Arial", 16)).pack(pady=(10, 0))
@@ -248,10 +249,12 @@ def clear_text():
 
 # Copies the content of the transcription_text widget to the clipboard.
 def copy_text():
-    root.clipboard_clear()
-    selected_text = f"transcrioption: {transcription_text.get('1.0', tk.END)}, question: {error_message_text.get('1.0', tk.END)}, prompt: {prompt_message_text.get('1.0', tk.END)}"
+    # Get the selected text in prompt message
+    selected_text = prompt_message_frame.selection_get()
 
-    root.clipboard_append(selected_text)
+    # Delete and copy to error message prompt
+    error_message_text.delete(1.0, tk.END)
+    error_message_text.insert(tk.END, selected_text)
 
 
 # Searches for the provided text in the knowledge base.
@@ -287,11 +290,16 @@ def search_kb():
 
 # Opens a settings window for configuring various options.
 def open_settings_window():
-    load_settings()
     global selected_input_device_name, selected_output_device_name, audio_server_port
+
+    settings = load_settings()
+
+    selected_input_device_index = settings["input_device_index"]
+    selected_output_device_index = settings["output_device_index"]
 
     selected_input_device_name = settings["input_device"]
     selected_output_device_name = settings["output_device"]
+
     audio_server_port = settings["port"]
 
     # Initialize the settings window
@@ -299,6 +307,7 @@ def open_settings_window():
     settings_window.title("Settings")
     settings_window.geometry("500x400")
     settings_window.grab_set()
+    settings_window.resizable(False, False)
     center_window(settings_window)
     content_frame = tk.Frame(settings_window)
     content_frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
