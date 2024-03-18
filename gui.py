@@ -1,11 +1,14 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
-from utils.transcription import list_audio_devices, start_audio_server, init_deepgram, init_live_transcription
+from utils.transcription import list_audio_devices, start_audio_server, init_deepgram, init_live_transcription, list_audio_output_devices, get_input_device_index, get_output_device_index
 from utils.kbase import make_openai_request_with_question
+from utils.general import load_settings, center_window, restart_application
+
 import threading
 from threading import Event
 import pyaudio
+import json
 
 # CONFIG
 # -------------------------
@@ -29,14 +32,29 @@ root.grid_rowconfigure(1, weight=1)
 root.grid_columnconfigure(0, weight=1)
 root.grid_columnconfigure(1, weight=1)
 
+# load settings
+settings = load_settings()
+
 # VARIABLES
 # -------------------------
+
+
+# Settings
+selected_input_device_index = settings["input_device_index"]
+selected_output_device_index = settings["output_device_index"]
+
+selected_input_device_name = settings["input_device"]
+selected_output_device_name = settings["output_device"]
+
+audio_server_port = settings["port"]
+
+# General variables
 transcription_running = False
 first_run = True
-selected_input_device_index = 0
+
+# Initialize deepgram client
 deepgram = init_deepgram()
-audio_server_port = 5001
-audio_stream_url = f"http://localhost:5001/audio"
+
 # Initialize the toggle event and transcription toggle function at a global scope
 toggle_event = Event()
 toggle_transcription = None
@@ -44,15 +62,62 @@ toggle_transcription = None
 # FUNCTIONS
 # -------------------------
 
+# Applies the selected settings.
+def apply_settings(input_device, output_device, port, auto_port, settings_window):
+    global selected_input_device_index, selected_output_device_index, selected_input_device_name, selected_output_device_name, audio_server_port, first_run
+
+    # Convert auto_port to the appropriate port setting
+    new_port = "Auto" if auto_port else port
+
+    # Check if there's a change in the settings or if it's not the first run
+    settings_changed = (input_device != selected_input_device_name or
+                        output_device != selected_output_device_name or
+                        new_port != audio_server_port)
+    need_restart = settings_changed
+
+    selected_input_device_index = get_input_device_index(input_device, audio)
+    selected_output_device_index = get_output_device_index(output_device, audio)
+    selected_input_device_name = input_device
+    selected_output_device_name = output_device
+    audio_server_port = new_port
+
+    settings = {
+        "input_device": input_device,
+        "input_device_index": selected_input_device_index,
+        "output_device": output_device,
+        "output_device_index": selected_output_device_index,
+        "port": new_port,
+    }
+
+    # Saving to a JSON file
+    with open('settings.json', 'w') as json_file:
+        json.dump(settings, json_file, indent=4)
+
+    # Here you would implement the actual settings application logic
+    print(json.dumps(settings, indent=4))
+
+    if need_restart:
+        # Now, prompt the user to restart the application for changes to take effect
+        user_choice = messagebox.askyesno("Restart Required", "We have to restart the application for the changes to take effect. Do you want to restart now?")
+        
+        if user_choice:  # If the user clicks 'Yes', restart the application
+            restart_application()
+        else:  # If the user clicks 'No', just close the settings window
+            settings_window.destroy()
+    else:
+        # Close the settings window if there's no need to restart
+        settings_window.destroy()
+        
+# Initializes transcription and starts audio stream
 def init_transcription():
     global toggle_transcription
     # Only initialize once
     if toggle_transcription is None:
          # Start audio stream
-        audio_stream_url = start_audio_server(port=5001, device_index=selected_input_device_index)
+        audio_stream_url = start_audio_server(port=audio_server_port, device_index=selected_input_device_index)
         toggle_transcription = init_live_transcription(deepgram, stream_url=audio_stream_url, language="tr", textbox=transcription_text, toggle_event=toggle_event)
 
-
+# Starts or stops transcription based on current state
 def start_transcription():
     global transcription_running, first_run
     
@@ -66,7 +131,6 @@ def start_transcription():
     # Update the transcription running state and button text
     transcription_running = not transcription_running
     start_stop_button.config(text="Stop" if transcription_running else "Start")
-
     
 # Prints the size of the root window every 500 milliseconds.
 def print_size():
@@ -79,7 +143,6 @@ def clear_text():
     error_message_text.delete("1.0", tk.END)
     prompt_message_text.delete("1.0", tk.END)
     
-
 # Copies the content of the transcription_text widget to the clipboard.
 def copy_text():
     root.clipboard_clear()
@@ -118,14 +181,28 @@ def search_kb():
 
 # Opens a settings window for configuring various options.
 def open_settings_window():
+    load_settings()
+    global selected_input_device_name, selected_output_device_name, audio_server_port
+
+    selected_input_device_name = settings["input_device"]
+    selected_output_device_name = settings["output_device"]
+
+    audio_server_port = settings["port"]
+
+    
+    # Initialize the settings window
     settings_window = tk.Toplevel(root)
     settings_window.title("Settings")
     settings_window.geometry("500x400")  # Adjust the size based on the content
     settings_window.grab_set()  # Makes the settings window modal
-
+    
+    # Center the window at the start
+    center_window(settings_window)
+    
     content_frame = tk.Frame(settings_window)
     content_frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
 
+    # Settings Title
     settings_label = tk.Label(content_frame, text="Settings", font=("Arial", 14))
     settings_label.pack(pady=(0, 10))
 
@@ -133,10 +210,12 @@ def open_settings_window():
     audio_input_label = tk.Label(content_frame, text="Audio Input Devices:", font=("Arial", 10))
     audio_input_label.pack()
 
-    audio_input_devices = ["Microphone 1", "Microphone 2", "Microphone 3"]  # Placeholder list
+    # Get input devices
+    audio_input_devices = list_audio_devices(p=audio)
     selected_input_device = tk.StringVar(settings_window)
-    selected_input_device.set(audio_input_devices[0])
+    selected_input_device.set(selected_input_device_name)
 
+    # Input menu
     audio_input_menu = tk.OptionMenu(content_frame, selected_input_device, *audio_input_devices)
     audio_input_menu.pack(pady=(10, 20))
 
@@ -144,10 +223,14 @@ def open_settings_window():
     audio_output_label = tk.Label(content_frame, text="Audio Output Devices:", font=("Arial", 10))
     audio_output_label.pack()
 
-    audio_output_devices = ["Speaker 1", "Speaker 2", "Speaker 3"]  # Placeholder list
-    selected_output_device = tk.StringVar(settings_window)
-    selected_output_device.set(audio_output_devices[0])
+    # List the output devices
+    audio_output_devices = list_audio_output_devices(p=audio)
 
+    # Declare a variable for output device name
+    selected_output_device = tk.StringVar(settings_window)
+    selected_output_device.set(selected_output_device_name)
+
+    # Audio output menu for selecting
     audio_output_menu = tk.OptionMenu(content_frame, selected_output_device, *audio_output_devices)
     audio_output_menu.pack(pady=(10, 20))
 
@@ -166,8 +249,9 @@ def open_settings_window():
     port_frame = tk.Frame(advanced_settings)
     port_frame.pack(fill=tk.X)
     
-    audio_server_port = tk.StringVar()
-    audio_server_port_entry = tk.Entry(port_frame, textvariable=audio_server_port)
+    audio_server_port_value = tk.StringVar(settings_window, value=settings.get("port", "Auto"))
+    print(f"server port: {audio_server_port_value.get()}")
+    audio_server_port_entry = tk.Entry(port_frame, textvariable=audio_server_port_value)
     audio_server_port_entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
 
     auto_port = tk.BooleanVar()
@@ -178,7 +262,7 @@ def open_settings_window():
     buttons_frame = tk.Frame(settings_window)
     buttons_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=(0, 10))
 
-    apply_button = tk.Button(buttons_frame, text="Apply", command=lambda: apply_settings(selected_input_device.get(), selected_output_device.get(), audio_server_port.get(), auto_port.get()))
+    apply_button = tk.Button(buttons_frame, text="Apply", command=lambda: apply_settings(selected_input_device.get(), selected_output_device.get(), audio_server_port_entry.get(), auto_port.get(), settings_window))
     apply_button.pack(side=tk.RIGHT, padx=10)
 
     cancel_button = tk.Button(buttons_frame, text="Close", command=settings_window.destroy)
@@ -199,17 +283,6 @@ def toggle_auto_port(entry, auto_var):
         entry.config(state='disabled')
     else:
         entry.config(state='normal')
-
-# Applies the selected settings.
-def apply_settings(input_device, output_device, port, auto_port):
-    print("Selected audio input device:", input_device)
-    print("Selected audio output device:", output_device)
-    if auto_port:
-        print("Audio server port: Auto")
-    else:
-        print("Audio server port:", port)
-    # Here you would implement the actual settings application logic
-
 
 # COMPONENTS
 # --------------------------
@@ -277,6 +350,9 @@ exit_button = tk.Button(right_buttons_frame, text="Exit App", command=root.destr
 help_button.pack(side="left", padx=5, pady=5)
 settings_button.pack(side="left", padx=5, pady=5)
 exit_button.pack(side="left", padx=5, pady=5)
+
+# Center the window before start
+center_window(root)
 
 # Run the application
 root.mainloop()
