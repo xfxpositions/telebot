@@ -35,6 +35,7 @@ def init_live_transcription(
     toggle_event: threading.Event,
 ):
     print("LIVE TRANSCRIPTION FUNCTION WORKING")
+    stream_url = "http://localhost:5003/audio"
 
     # STEP 2: Define a function to handle streaming and transcription
     def handle_stream():
