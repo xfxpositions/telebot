@@ -2,31 +2,19 @@ import sys
 import os
 import tkinter as tk
 from tkinter import messagebox
-from utils.general import center_window
-from settings import open_settings_window
+from utils.general import center_window, open_documentation, exit_app
+from ui.settings import open_settings_window
 
 
 # Menubar
 def setup_menubar(root):
 
-    # Basically exits..
-    def exit_app():
-        root.destroy()
-
-    # Opens the documenation.pdf file
-    def open_documentation():
-        documentation_path = os.path.join("documentation", "documentation.pdf")
-        absolute_documentation_path = os.path.abspath(documentation_path)
-
-        if sys.platform == "win32":
-            os.startfile(absolute_documentation_path)
-
     # Define a function to show information about the application
     def show_about():
         # Create a new window for displaying about information
         about_window = tk.Toplevel(root)
-        about_window.geometry("300x300")
         center_window(about_window)
+        about_window.geometry("300x300")
         about_window.title("About")
         about_window.resizable(False, False)
 
@@ -65,7 +53,7 @@ def setup_menubar(root):
 
     # File menu
     menu_file = tk.Menu(menubar, tearoff=0)
-    menu_file.add_command(label="Exit", command=exit_app)
+    menu_file.add_command(label="Exit", command=lambda: exit_app(root))
     menubar.add_cascade(label="File", menu=menu_file)
 
     # Settings menu with a submenu

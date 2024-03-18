@@ -40,3 +40,17 @@ def restart_application():
     except Exception as e:
         # Log the exception or handle it as per your requirements
         print(f"Error restarting application: {e}")
+
+
+# Opens the documenation.pdf file
+def open_documentation(path):
+
+    absolute_documentation_path = os.path.abspath(path)
+
+    if sys.platform == "win32":
+        os.startfile(absolute_documentation_path)
+
+
+# Basically exits..
+def exit_app(root):
+    root.destroy()

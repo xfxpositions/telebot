@@ -2,6 +2,8 @@ import tkinter as tk
 from utils.general import center_window, load_settings, restart_application
 from utils.transcription import list_audio_devices, list_audio_output_devices
 from tkinter import messagebox
+import json
+import pyaudio
 
 
 # Applies the selected settings.
@@ -93,7 +95,8 @@ def toggle_auto_port(entry, auto_var):
 
 
 # Opens a settings window for configuring various options.
-def open_settings_window():
+def open_settings_window(root):
+    audio = pyaudio.PyAudio()
     global selected_input_device_name, selected_output_device_name, audio_server_port
 
     settings = load_settings()
