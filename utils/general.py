@@ -1,20 +1,27 @@
-import json 
+import json
 from tkinter import messagebox
 import sys
 import os
 
+
 def load_settings():
     try:
-        with open('settings.json', 'r') as json_file:
+        with open("settings.json", "r") as json_file:
             settings = json.load(json_file)
     except FileNotFoundError:
         # Default settings if the file does not exist
         settings = {
+            "audio_output": "",
+            "audio_input": "",
             "input_device_index": 0,
             "output_device_index": 0,
             "port": "Auto",
         }
+        # Write the default settings to a new file
+        with open("settings.json", "w") as json_file:
+            json.dump(settings, json_file, indent=4)
     return settings
+
 
 def center_window(window):
     window.update_idletasks()
@@ -22,8 +29,9 @@ def center_window(window):
     height = window.winfo_height()
     x = (window.winfo_screenwidth() // 2) - (width // 2)
     y = (window.winfo_screenheight() // 2) - (height // 2)
-    window.geometry('{}x{}+{}+{}'.format(width, height, x, y))
-    
+    window.geometry("{}x{}+{}+{}".format(width, height, x, y))
+
+
 def restart_application():
     """Restarts the current program, with file objects and descriptors cleanup"""
     try:
