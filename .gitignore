@@ -1,2 +1,5 @@
 __pycache__
 .env
+settings.json
+utils/__pycache__
+voicemeeter-test.py
