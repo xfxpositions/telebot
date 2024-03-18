@@ -11,6 +11,7 @@ import pyaudio
 from flask import Flask, Response,render_template
 import tkinter as tk
 from threading import Event
+import sounddevice as sd
 
 def init_deepgram():
     
@@ -164,7 +165,8 @@ def start_audio_server(port, device_index:int):
     stream_thread.start()
 
     print("waiting the server run")
-
+    p = pyaudio.PyAudio()
+    
     # Wait here until the event is set, indicating the server is ready
     server_ready_event.wait()
    
@@ -242,8 +244,7 @@ def select_input_device():
     return selected_device_index - 1  # Adjusting index to match Python's zero-based indexing
 
 
-def get_audio_device_index(device_name):
-    p = pyaudio.PyAudio()
+def get_audio_device_index(device_name, p):
     for i in range(p.get_device_count()):
         dev_info = p.get_device_info_by_index(i)
         if dev_info['name'] == device_name:
@@ -273,3 +274,18 @@ def get_output_device_index(device_name, audio):
         n+=1
     
     return 0
+
+def list_input_devices_sd():
+    devices = sd.query_devices()
+    input_devices = []
+    for device in devices:
+        if device['max_input_channels'] > 0:
+            input_devices.append(device['name'])
+    return input_devices
+
+def find_device_index_sd(device_name):
+    devices = sd.query_devices()
+    for i, dev in enumerate(devices):
+        if dev['name'] == device_name:
+            return i
+    return None

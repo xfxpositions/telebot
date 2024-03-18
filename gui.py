@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
-from utils.transcription import list_audio_devices, start_audio_server, init_deepgram, init_live_transcription, list_audio_output_devices, get_input_device_index, get_output_device_index
+from utils.transcription import list_audio_devices, start_audio_server, init_deepgram, init_live_transcription, list_audio_output_devices, get_audio_device_index, find_device_index_sd, list_input_devices_sd
 from utils.kbase import make_openai_request_with_question
 from utils.general import load_settings, center_window, restart_application
 
@@ -68,18 +68,19 @@ def apply_settings(input_device, output_device, port, auto_port, settings_window
 
     # Convert auto_port to the appropriate port setting
     new_port = "Auto" if auto_port else port
-
     # Check if there's a change in the settings or if it's not the first run
     settings_changed = (input_device != selected_input_device_name or
                         output_device != selected_output_device_name or
                         new_port != audio_server_port)
     need_restart = settings_changed
 
-    selected_input_device_index = get_input_device_index(input_device, audio)
-    selected_output_device_index = get_output_device_index(output_device, audio)
+    selected_input_device_index = get_audio_device_index(input_device, audio)
+    selected_output_device_index = get_audio_device_index(output_device, audio)
     selected_input_device_name = input_device
     selected_output_device_name = output_device
     audio_server_port = new_port
+    
+    selected_input_device_index = find_device_index_sd(selected_input_device_name)
 
     settings = {
         "input_device": input_device,
@@ -113,13 +114,16 @@ def init_transcription():
     global toggle_transcription
     # Only initialize once
     if toggle_transcription is None:
-         # Start audio stream
+        # Start audio stream
         audio_stream_url = start_audio_server(port=audio_server_port, device_index=selected_input_device_index)
         toggle_transcription = init_live_transcription(deepgram, stream_url=audio_stream_url, language="tr", textbox=transcription_text, toggle_event=toggle_event)
 
 # Starts or stops transcription based on current state
 def start_transcription():
     global transcription_running, first_run
+    
+    # clear the transcription text
+    transcription_text.delete('1.0', tk.END)
     
     if first_run:
         init_transcription()
@@ -130,7 +134,7 @@ def start_transcription():
 
     # Update the transcription running state and button text
     transcription_running = not transcription_running
-    start_stop_button.config(text="Stop" if transcription_running else "Start")
+    start_stop_button.config(text="Stop Transcription" if transcription_running else "Start Transcription")
     
 # Prints the size of the root window every 500 milliseconds.
 def print_size():
@@ -211,7 +215,9 @@ def open_settings_window():
     audio_input_label.pack()
 
     # Get input devices
-    audio_input_devices = list_audio_devices(p=audio)
+    # audio_input_devices = list_audio_devices(p=audio)
+    audio_input_devices = list_input_devices_sd()
+    
     selected_input_device = tk.StringVar(settings_window)
     selected_input_device.set(selected_input_device_name)
 
@@ -332,7 +338,7 @@ right_buttons_frame = tk.Frame(buttons_frame)  # Frame for right-aligned buttons
 right_buttons_frame.pack(side="right")  # Align to the right
 
 # Position buttons appropriately
-start_stop_button = tk.Button(transcription_frame, text="Start/Stop", command=start_transcription)
+start_stop_button = tk.Button(transcription_frame, text="Start Transcription", command=start_transcription)
 start_stop_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
 
 clear_button = tk.Button(buttons_frame, text="Clear", command=clear_text)
