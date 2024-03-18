@@ -299,7 +299,7 @@ def open_settings_window():
     settings_window.title("Settings")
     settings_window.geometry("500x400")
     settings_window.grab_set()
-
+    center_window(settings_window)
     content_frame = tk.Frame(settings_window)
     content_frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
 
