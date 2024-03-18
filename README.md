@@ -39,9 +39,10 @@ python gui.py
 
 ## Who made it?
 
-Yusuf Karaca
-Sinan Yalcin
-Bora Bulus
+made by love by
+
+- Yusuf Karaca
+- Sinan Yalcin
 
 ## License
 
