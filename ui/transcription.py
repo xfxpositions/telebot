@@ -1,16 +1,28 @@
 # Initializes transcription and starts audio stream
-from utils.transcription import start_audio_server, init_live_transcription
+from utils.transcription import start_audio_server, init_live_transcription, init_deepgram
 import tkinter as tk
+from threading import Event
+from utils.settings import Settings
 
 
-def init_transcription(deepgram, settings, transcription_text, toggle_event):
-    global toggle_transcription
+# Initialize the toggle event and transcription toggle function at a global scope
+toggle_event = Event()
+toggle_transcription = None
+
+transcription_running = False
+first_run = True
+
+# Initialize deepgram client
+deepgram = init_deepgram()
+
+def init_transcription(deepgram, settings: Settings, transcription_text):
+    global toggle_event, toggle_transcription
     # Only initialize once
     if toggle_transcription is None:
         # Start audio stream
         audio_stream_url = start_audio_server(
-            port=settings.audio_server_port,
-            device_index=settings.selected_input_device_index,
+            port=settings.port,
+            device_index=settings.input_device_index,
         )
         toggle_transcription = init_live_transcription(
             deepgram,
@@ -22,14 +34,13 @@ def init_transcription(deepgram, settings, transcription_text, toggle_event):
 
 
 # Starts or stops transcription based on current state
-def start_transcription(transcription_text: tk.Text, start_stop_button: tk.Button):
-    global transcription_running, first_run
-
+def start_transcription(transcription_text: tk.Text, start_stop_button: tk.Button, settings):
+    global transcription_running, first_run, toggle_event
     # clear the transcription text
     transcription_text.delete("1.0", tk.END)
 
     if first_run:
-        init_transcription()
+        init_transcription(deepgram, settings, transcription_text)
         first_run = False
 
     # Toggle the transcription state
@@ -42,7 +53,7 @@ def start_transcription(transcription_text: tk.Text, start_stop_button: tk.Butto
     )
 
 
-def setup_transcription_frame(root):
+def setup_transcription_frame(root, settings):
 
     # Transcription frame setup
     transcription_frame = tk.LabelFrame(root, text="Transcription:")
@@ -62,6 +73,9 @@ def setup_transcription_frame(root):
 
     # Position buttons appropriately
     start_stop_button = tk.Button(
-        transcription_frame, text="Start Transcription", command=start_transcription
+        transcription_frame, text="Start Transcription", command=lambda: start_transcription(transcription_text, start_stop_button, settings)
     )
     start_stop_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+
+    return transcription_text
+
