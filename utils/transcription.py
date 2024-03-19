@@ -12,6 +12,8 @@ from flask import Flask, Response, render_template
 import tkinter as tk
 from threading import Event
 import sounddevice as sd
+import socket
+from contextlib import closing
 
 
 # Loads environment variables and initializes DeepgramClient with API key.
@@ -35,7 +37,7 @@ def init_live_transcription(
     toggle_event: threading.Event,
 ):
     print("LIVE TRANSCRIPTION FUNCTION WORKING")
-    stream_url = "http://localhost:5003/audio"
+   
 
     # STEP 2: Define a function to handle streaming and transcription
     def handle_stream():
@@ -164,12 +166,13 @@ def sound_stream(device_index: int):
 
 # Starts a separate thread to run the audio streaming server.
 def init_stream_audio(port, device_index: int, server_ready_event):
-
+    print(f"Starting stream with {device_index} device index")
     app = Flask(__name__)
 
     @app.route("/audio")
     def audio():
-        return Response(sound_stream(device_index))
+        # TODO
+        return Response(sound_stream(0))
 
     @app.route("/")
     def index():
@@ -185,8 +188,19 @@ def init_stream_audio(port, device_index: int, server_ready_event):
 
     # Finds and returns information about the preferred audio host API.
 
+# Finds an returns a free port
+def find_free_port():
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(('', 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
 
+# Starts the audio server
 def start_audio_server(port, device_index: int):
+
+    if port == "Auto":
+        port = find_free_port() 
+
     server_ready_event = threading.Event()
     stream_thread = threading.Thread(
         target=init_stream_audio, args=(port, device_index, server_ready_event)
