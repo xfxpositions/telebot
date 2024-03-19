@@ -10,7 +10,7 @@ import threading
 # Searches for the provided text in the knowledge base.
 def search_kb(
     prompt_message_text: tk.Text,
-    question: str,
+    error_message_text: tk.Text,
     search_kb_button: tk.Button,
 ):
     # Clear the past prompt
@@ -19,7 +19,7 @@ def search_kb(
     textbox = prompt_message_text
 
     # Get the text from textbox
-    text = question
+    text = error_message_text.get("1.0", "end-1c")
 
     # Set search button text to sending
     button_old_text = search_kb_button.cget("text")

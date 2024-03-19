@@ -2,7 +2,7 @@ import tkinter as tk
 from utils.kb import search_kb
 
 
-def setup_kbase_frame(root):
+def setup_kbase_frame(root, prompt_message_text):
 
     # Error message frame setup
     error_message_frame = tk.LabelFrame(root, text="Search")
@@ -25,3 +25,5 @@ def setup_kbase_frame(root):
         ),
     )
     search_kb_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+
+    return error_message_text

@@ -13,8 +13,8 @@ def load_settings():
         settings = {
             "audio_output": "",
             "audio_input": "",
-            "input_device_index": 0,
-            "output_device_index": 0,
+            "input_device": 0,
+            "output_device": 0,
             "port": "Auto",
         }
         # Write the default settings to a new file

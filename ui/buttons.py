@@ -7,7 +7,6 @@ from utils.tools import clear_text, copy_text
 
 def setup_buttons(
     root,
-    audio,
     documentation_path,
 ):
 

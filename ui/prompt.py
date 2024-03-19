@@ -17,3 +17,5 @@ def setup_prompt_frame(root):
     prompt_message_text.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
     prompt_message_frame.grid_rowconfigure(0, weight=1)
     prompt_message_frame.grid_columnconfigure(0, weight=1)
+    
+    return prompt_message_text
