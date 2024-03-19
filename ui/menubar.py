@@ -7,7 +7,7 @@ from ui.settings import open_settings_window
 
 
 # Menubar
-def setup_menubar(root):
+def setup_menubar(root, documentation_path):
 
     # Define a function to show information about the application
     def show_about():
@@ -66,7 +66,7 @@ def setup_menubar(root):
     # Help menu
     menu_help = tk.Menu(menubar, tearoff=0)
     menu_help.add_command(label="About", command=show_about)
-    menu_help.add_command(label="Documentation", command=open_documentation)
+    menu_help.add_command(label="Documentation", command=lambda:open_documentation(documentation_path))
 
     menubar.add_cascade(label="Help", menu=menu_help)
 
