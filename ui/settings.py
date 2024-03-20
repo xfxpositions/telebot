@@ -43,8 +43,8 @@ def open_settings_window(root):
     selected_input_device = tk.StringVar(settings_window, value=settings.input_device)
     selected_output_device = tk.StringVar(settings_window, value=settings.output_device)
     audio_server_port_value = tk.StringVar(settings_window, value=settings.port)
-    selected_input_device_info = tk.StringVar()
-    selected_output_device_info = tk.StringVar()
+    selected_input_device_info = tk.StringVar(settings_window, value=settings.input_device)
+    selected_output_device_info = tk.StringVar(settings_window, value=settings.output_device)
     auto_port = tk.BooleanVar(value=settings.port == "Auto")
 
     # Callback functions
