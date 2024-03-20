@@ -25,12 +25,11 @@ def toggle_auto_port(entry, auto_var):
 
 # Function to open the settings window and configure various options
 def open_settings_window(root):
-    audio = pyaudio.PyAudio()
     settings = Settings()  # Instantiate the Settings class
 
     # Fetching the list of audio input and output devices
-    audio_input_devices = list_audio_devices(p=audio)
-    audio_output_devices = list_audio_output_devices(p=audio)
+    audio_input_devices = list_audio_devices()
+    audio_output_devices = list_audio_output_devices()
 
     # Initialize the settings window
     settings_window = tk.Toplevel(root)
@@ -44,20 +43,24 @@ def open_settings_window(root):
     selected_input_device = tk.StringVar(settings_window, value=settings.input_device)
     selected_output_device = tk.StringVar(settings_window, value=settings.output_device)
     audio_server_port_value = tk.StringVar(settings_window, value=settings.port)
+    selected_input_device_info = tk.StringVar()
+    selected_output_device_info = tk.StringVar()
     auto_port = tk.BooleanVar(value=settings.port == "Auto")
 
     # Callback functions
     def on_input_device_change(*args):
-        new_value = selected_input_device.get()
-        print(f"Input Device changed to: {new_value}")
-        # Update your settings object here
-        settings.input_device = new_value
+        device_info = selected_input_device_info.get()
+        device_name, device_index = device_info.rsplit(":", 1)
+        settings.input_device = device_name.strip()
+        settings.input_device_index = int(device_index.strip())
+        print(f"Input Device changed to: {settings.input_device} with index {settings.input_device_index}")
 
     def on_output_device_change(*args):
-        new_value = selected_output_device.get()
-        print(f"Output Device changed to: {new_value}")
-        # Update your settings object here
-        settings.output_device = new_value
+        device_info = selected_output_device_info.get()
+        device_name, device_index = device_info.rsplit(":", 1)
+        settings.output_device = device_name.strip()
+        settings.output_device_index = int(device_index.strip())
+        print(f"Output Device changed to: {settings.output_device} with index {settings.output_device_index}")
 
     def on_port_value_change(*args):
         new_value = audio_server_port_value.get()
@@ -75,9 +78,10 @@ def open_settings_window(root):
     # Attach the trace_add method to variables
     selected_input_device.trace_add("write", on_input_device_change)
     selected_output_device.trace_add("write", on_output_device_change)
+    selected_input_device_info.trace_add("write", on_input_device_change)
+    selected_output_device_info.trace_add("write", on_output_device_change)
     audio_server_port_value.trace_add("write", on_port_value_change)
     auto_port.trace_add("write", on_auto_port_change)
-
 
 
     # Creating UI components
@@ -87,11 +91,13 @@ def open_settings_window(root):
 
     # Audio Input Devices Section
     audio_input_label = tk.Label(content_frame, text="Audio Input Devices:", font=("Arial", 10))
-    audio_input_menu = tk.OptionMenu(content_frame, selected_input_device, *[device[0] for device in audio_input_devices])
+    audio_input_menu = tk.OptionMenu(content_frame, selected_input_device_info, *["{}: {}".format(device[0], device[1]) for device in audio_input_devices])
+
+
 
     # Audio Output Devices Section
     audio_output_label = tk.Label(content_frame, text="Audio Output Devices:", font=("Arial", 10))
-    audio_output_menu = tk.OptionMenu(content_frame, selected_output_device, *[device[0] for device in audio_output_devices])
+    audio_output_menu = tk.OptionMenu(content_frame, selected_output_device_info, *["{}: {}".format(device[0], device[1]) for device in audio_output_devices])
 
     # Advanced Settings Section
     advanced_settings_frame = tk.Frame(content_frame)

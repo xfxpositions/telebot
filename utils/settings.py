@@ -39,9 +39,9 @@ class Settings:
             json.dump(settings, json_file, indent=4)
 
     def apply_settings(self, settings_window, restart_application_callback):
-        audio = pyaudio.PyAudio()
-        input_devices = list_audio_devices(p=audio)
-        output_devices = list_audio_output_devices(p=audio)
+        
+        input_devices = list_audio_devices()
+        output_devices = list_audio_output_devices()
 
         selected_input_device_info = next((device for device in input_devices if device[0] == self.input_device), None)
         self.input_device_index = selected_input_device_info[1] if selected_input_device_info else None
@@ -70,3 +70,4 @@ class Settings:
 
     # You might need additional methods to update individual settings, like device names or port,
     # before calling apply_settings(). These methods can modify the class attributes directly.
+

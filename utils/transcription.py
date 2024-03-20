@@ -172,7 +172,7 @@ def init_stream_audio(port, device_index: int, server_ready_event):
     @app.route("/audio")
     def audio():
         # TODO
-        return Response(sound_stream(0))
+        return Response(sound_stream(device_index))
 
     @app.route("/")
     def index():
@@ -237,46 +237,31 @@ def get_api_info(p: pyaudio.PyAudio):
 
 
 # Lists audio input devices available on the system.
-def list_audio_devices(p: pyaudio.PyAudio):
-
-    PREFERRED_HOST_API_NAME = "Windows WASAPI"
+def list_audio_devices():
+    p = pyaudio.PyAudio()
     devices = []
-    api_info, api_index = get_api_info(p)
-    api_name = api_info["name"]
-    if api_name != PREFERRED_HOST_API_NAME:
-        print(
-            f'[WARNING] "{PREFERRED_HOST_API_NAME}" not available on this system, '
-            f'going with "{api_name}" instead'
-        )
-
-    numdevices = api_info.get("deviceCount")
-    for i in range(numdevices):
-        dev_info = p.get_device_info_by_host_api_device_index(api_index, i)
-        if dev_info.get("maxInputChannels") > 0:
-            entry = (dev_info.get("name"), dev_info.get("index"))
+    for i in range(p.get_device_count()):
+        device_info = p.get_device_info_by_index(i)
+        if device_info['maxInputChannels'] > 0 and device_info['hostApi'] == 0:  # Checks if the device is an input device
+            entry = (device_info['name'], device_info['index'])
             devices.append(entry)
+    p.terminate()
     return devices
 
 
-# Lists audio output devices available on the system.
-def list_audio_output_devices(p: pyaudio.PyAudio):
-
-    PREFERRED_HOST_API_NAME = "Windows WASAPI"
+# Lists audio input devices available on the system.
+def list_audio_output_devices():
+    p = pyaudio.PyAudio()
     devices = []
-    api_info, api_index = get_api_info(p)
-    api_name = api_info["name"]
-    if api_name != PREFERRED_HOST_API_NAME:
-        print(
-            f'[WARNING] "{PREFERRED_HOST_API_NAME}" not available on this system, '
-            f'going with "{api_name}" instead'
-        )
-
-    numdevices = api_info.get("deviceCount")
-    for i in range(numdevices):
-        dev_info = p.get_device_info_by_host_api_device_index(api_index, i)
-        if dev_info.get("maxOutputChannels") > 0:
-            devices.append(dev_info.get("name"))
+    for i in range(p.get_device_count()):
+        device_info = p.get_device_info_by_index(i)
+        if device_info['maxOutputChannels'] > 0 and device_info['hostApi'] == 0:  # Checks if the device is an input device
+            entry = (device_info['name'], device_info['index'])
+            devices.append(entry)
+    p.terminate()
     return devices
+
+
 
 
 # Interactively allows the user to select an audio input device.
