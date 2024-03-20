@@ -5,6 +5,7 @@ from utils.general import center_window, restart_application
 from utils.settings import Settings
 from utils.transcription import list_audio_devices, list_audio_output_devices
 
+
 # Function to toggle the visibility of advanced settings
 def toggle_advanced_settings(frame, button):
     if frame.winfo_viewable():

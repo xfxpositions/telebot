@@ -1,29 +1,18 @@
 import tkinter as tk
 from utils.kb import search_kb
 
-
 def setup_kbase_frame(root, prompt_message_text):
-
-    # Error message frame setup
-    error_message_frame = tk.LabelFrame(root, text="Search")
-    error_message_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
-    root.grid_columnconfigure(1, weight=1)
-
-    # Error message textbox setup
-    error_message_text = tk.Text(error_message_frame, height=10, width=40)
-    error_message_text.insert(tk.END, "Lütfen sorunu yazınız..")
-    error_message_text.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
-    error_message_frame.grid_rowconfigure(0, weight=1)
-    error_message_frame.grid_columnconfigure(0, weight=1)
-
-    search_kb_button = tk.Button(
-        error_message_frame,
-        text="Search in KB",
-        command=lambda: search_kb(
-            prompt_message_text,
-            error_message_text,
-        ),
-    )
-    search_kb_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
-
-    return error_message_text
+    # KB search frame setup within the upper part of frame2
+    kbase_frame = tk.LabelFrame(root, text="Search KB")
+    kbase_frame.pack(fill="both", expand=True, padx=10, pady=10)
+    
+    # KB search textbox setup
+    kb_search_text = tk.Text(kbase_frame, height=3)
+    kb_search_text.insert(tk.END, "Please type your issue here..")
+    kb_search_text.pack(fill="both", expand=True, padx=5, pady=5)
+    
+    # KB search button setup
+    search_kb_button = tk.Button(kbase_frame, text="Search in KB", command=lambda: search_kb(prompt_message_text, kb_search_text, search_kb_button))
+    search_kb_button.pack(pady=5, padx=5, fill="x")
+    
+    return kb_search_text

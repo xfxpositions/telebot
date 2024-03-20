@@ -59,7 +59,7 @@ def setup_menubar(root, documentation_path):
     # Settings menu with a submenu
     menu_settings = tk.Menu(menubar, tearoff=0)
     submenu_general_settings = tk.Menu(menu_settings, tearoff=0)
-    submenu_general_settings.add_command(label="General", command=open_settings_window)
+    submenu_general_settings.add_command(label="General", command=lambda: open_settings_window(root))
     menu_settings.add_cascade(label="Settings", menu=submenu_general_settings)
     menubar.add_cascade(label="Settings", menu=menu_settings)
 

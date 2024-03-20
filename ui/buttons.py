@@ -8,6 +8,10 @@ from utils.tools import clear_text, copy_text
 def setup_buttons(
     root,
     documentation_path,
+    transcription_text,
+    error_message_text,
+    prompt_message_text,
+    prompt_message_frame
 ):
 
     # Buttons frame setup for layout adjustment
@@ -18,8 +22,8 @@ def setup_buttons(
     right_buttons_frame = tk.Frame(buttons_frame)  # Frame for right-aligned buttons
     right_buttons_frame.pack(side="right")  # Align to the right
 
-    clear_button = tk.Button(buttons_frame, text="Clear", command=clear_text)
-    copy_button = tk.Button(buttons_frame, text="Copy", command=copy_text)
+    clear_button = tk.Button(buttons_frame, text="Clear", command= lambda:clear_text(transcription_text, error_message_text, prompt_message_text))
+    copy_button = tk.Button(buttons_frame, text="Copy", command=lambda:copy_text(prompt_message_frame, error_message_text))
     clear_button.pack(side="left", padx=5, pady=5)
     copy_button.pack(side="left", padx=5, pady=5)
 

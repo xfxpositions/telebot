@@ -54,7 +54,6 @@ def start_transcription(transcription_text: tk.Text, start_stop_button: tk.Butto
 
 
 def setup_transcription_frame(root, settings):
-
     # Transcription frame setup
     transcription_frame = tk.LabelFrame(root, text="Transcription:")
     transcription_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
@@ -62,7 +61,7 @@ def setup_transcription_frame(root, settings):
     root.grid_columnconfigure(0, weight=1)
 
     # Conversation textbox setup
-    transcription_text = tk.Text(transcription_frame, height=10, width=40)
+    transcription_text = tk.Text(transcription_frame)
     transcription_text.insert(
         tk.END,
         "Merhabalar, ben Mahmut Yazılımdan arıyorum.\nBilgisayarımda Logo ERP vardı fakat bugün giriş yapamıyorum. Bana yardımcı olur musunuz?",
@@ -71,6 +70,11 @@ def setup_transcription_frame(root, settings):
     transcription_frame.grid_rowconfigure(0, weight=1)
     transcription_frame.grid_columnconfigure(0, weight=1)
 
+    # Scrollbar for the transcription text
+    scrollbar = tk.Scrollbar(transcription_frame, orient="vertical", command=transcription_text.yview)
+    scrollbar.grid(row=0, column=1, sticky="ns")
+    transcription_text.config(yscrollcommand=scrollbar.set)
+
     # Position buttons appropriately
     start_stop_button = tk.Button(
         transcription_frame, text="Start Transcription", command=lambda: start_transcription(transcription_text, start_stop_button, settings)
@@ -78,4 +82,5 @@ def setup_transcription_frame(root, settings):
     start_stop_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
 
     return transcription_text
+
 
