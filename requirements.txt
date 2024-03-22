@@ -1,9 +1,8 @@
-deepgram
+deepgram-sdk
 python-dotenv
 pyaudio
 requests
 sounddevice
 httpx
 flask
-tk
-tkinter
+pyperclip
