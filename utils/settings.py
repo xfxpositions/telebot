@@ -12,6 +12,11 @@ class Settings:
         self.input_device_index = None
         self.output_device_index = None
         self.port = "Auto"
+        self.openai_config_path = "openai_config.json"
+        self.documentation_path = "documenatation/documentation.pdf"
+
+        self.openai_index = "indexbuluterpdys"
+
         self.load_settings()
 
     def load_settings(self):
@@ -22,6 +27,12 @@ class Settings:
                 self.output_device = settings.get("output_device", "")
                 self.input_device_index = settings.get("input_device_index")
                 self.output_device_index = settings.get("output_device_index")
+
+                self.openai_config_path = settings.get("openai_config_path")
+                self.openai_index = settings.get("openai_index")
+
+                self.documentation_path = settings.get("documentation_path")
+
                 self.port = settings.get("port", "Auto")
         except FileNotFoundError:
             print("settings.json not found")
@@ -33,13 +44,20 @@ class Settings:
             "output_device": self.output_device,
             "input_device_index": self.input_device_index,
             "output_device_index": self.output_device_index,
+
+            "openai_config_path": self.openai_config_path,
+            "openai_index": self.openai_index,
+
+            "documentation_path": self.documentation_path,
+
             "port": self.port,
         }
         with open("settings.json", "w") as json_file:
             json.dump(settings, json_file, indent=4)
 
     def apply_settings(self, settings_window, restart_application_callback):
-        
+        old_settings = Settings()
+
         input_devices = list_audio_devices()
         output_devices = list_audio_output_devices()
 
@@ -51,10 +69,16 @@ class Settings:
         
         self.save_settings()
 
+        need_restart = False
+
+        if old_settings.output_device_index!= self.output_device_index:
+            need_restart = True
+        if old_settings.input_device_index != self.input_device_index:
+            need_restart = True
+
         print("settings saved.")
 
         # Assume you've updated this logic as per your actual conditions for restart requirement
-        need_restart = True
         
         if need_restart:
             user_choice = messagebox.askyesno(

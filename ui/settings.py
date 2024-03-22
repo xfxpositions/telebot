@@ -4,6 +4,7 @@ import pyaudio
 from utils.general import center_window, restart_application
 from utils.settings import Settings
 from utils.transcription import list_audio_devices, list_audio_output_devices
+from utils.kbase import list_openai_indexs
 
 
 # Function to toggle the visibility of advanced settings
@@ -31,11 +32,12 @@ def open_settings_window(root):
     # Fetching the list of audio input and output devices
     audio_input_devices = list_audio_devices()
     audio_output_devices = list_audio_output_devices()
+    openai_indexs = list_openai_indexs(settings.openai_config_path)
 
     # Initialize the settings window
     settings_window = tk.Toplevel(root)
     settings_window.title("Settings")
-    settings_window.geometry("500x400")
+    settings_window.geometry("600x500")
     settings_window.grab_set()
     settings_window.resizable(False, False)
     center_window(settings_window)
@@ -46,6 +48,8 @@ def open_settings_window(root):
     audio_server_port_value = tk.StringVar(settings_window, value=settings.port)
     selected_input_device_info = tk.StringVar(settings_window, value=settings.input_device)
     selected_output_device_info = tk.StringVar(settings_window, value=settings.output_device)
+    selected_openai_index = tk.StringVar(settings_window, value=settings.openai_index)
+
     auto_port = tk.BooleanVar(value=settings.port == "Auto")
 
     # Callback functions
@@ -76,12 +80,19 @@ def open_settings_window(root):
         # For example, if auto, set port to "Auto", otherwise keep or set a specific port
         settings.port = "Auto" if is_auto else audio_server_port_value.get()
 
+    def on_openai_index_change(*args):
+        new_value = selected_openai_index.get()
+        print(f"Openai index changed to: {new_value}")
+        # Update your settings object here
+        settings.openai_index= new_value
+
     # Attach the trace_add method to variables
     selected_input_device.trace_add("write", on_input_device_change)
     selected_output_device.trace_add("write", on_output_device_change)
     selected_input_device_info.trace_add("write", on_input_device_change)
     selected_output_device_info.trace_add("write", on_output_device_change)
     audio_server_port_value.trace_add("write", on_port_value_change)
+    selected_openai_index.trace_add("write", on_openai_index_change)
     auto_port.trace_add("write", on_auto_port_change)
 
 
@@ -93,9 +104,7 @@ def open_settings_window(root):
     # Audio Input Devices Section
     audio_input_label = tk.Label(content_frame, text="Audio Input Devices:", font=("Arial", 10))
     audio_input_menu = tk.OptionMenu(content_frame, selected_input_device_info, *["{}: {}".format(device[0], device[1]) for device in audio_input_devices])
-
-
-
+    
     # Audio Output Devices Section
     audio_output_label = tk.Label(content_frame, text="Audio Output Devices:", font=("Arial", 10))
     audio_output_menu = tk.OptionMenu(content_frame, selected_output_device_info, *["{}: {}".format(device[0], device[1]) for device in audio_output_devices])
@@ -109,6 +118,12 @@ def open_settings_window(root):
     port_frame = tk.Frame(advanced_settings)
     audio_server_port_entry = tk.Entry(port_frame, textvariable=audio_server_port_value)
     auto_port_checkbox = tk.Checkbutton(port_frame, text="Auto", variable=auto_port, command=lambda: toggle_auto_port(audio_server_port_entry, auto_port))
+
+    openai_index_frame = tk.Frame(advanced_settings)
+    openai_index_label = tk.Label(openai_index_frame, text="OpenAi index:", font=("Arial", 10))
+    openai_index_menu = tk.OptionMenu(openai_index_frame, selected_openai_index, *openai_indexs)
+
+    print(openai_indexs)
 
     # Buttons Frame
     buttons_frame = tk.Frame(settings_window)
@@ -128,7 +143,12 @@ def open_settings_window(root):
     port_frame.pack(fill=tk.X)
     audio_server_port_entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
     auto_port_checkbox.pack(side=tk.RIGHT)
-    buttons_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=(0, 10))
+
+    openai_index_frame.pack(fill=tk.X)
+    openai_index_label.pack()
+    openai_index_menu.pack(pady=(10, 20))
+
+    buttons_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=(10, 10))
     apply_button.pack(side=tk.RIGHT, padx=10)
     cancel_button.pack(side=tk.RIGHT)
 

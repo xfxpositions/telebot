@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 from utils.general import center_window, open_documentation, exit_app
 from ui.settings import open_settings_window
+from ui.logs import open_logs_window
 
 
 # Menubar
@@ -61,6 +62,7 @@ def setup_menubar(root, documentation_path):
     submenu_general_settings = tk.Menu(menu_settings, tearoff=0)
     submenu_general_settings.add_command(label="General", command=lambda: open_settings_window(root))
     menu_settings.add_cascade(label="Settings", menu=submenu_general_settings)
+    menu_settings.add_command(label="Debug Console", command=lambda: open_logs_window(menu_settings))
     menubar.add_cascade(label="Settings", menu=menu_settings)
 
     # Help menu

@@ -1,11 +1,9 @@
 import tkinter as tk
-from ui.settings import open_settings_window
-from ui.transcription import start_transcription
-from utils.general import open_documentation
-from utils.kbase import make_openai_request_with_question
-from utils.tools import clear_text, copy_text
+from utils.kbase import make_openai_request_with_question, make_openai_request
 import threading
+from utils.settings import Settings
 
+openai_config_file_path = "openai_config.json"
 
 # Searches for the provided text in the knowledge base.
 def search_kb(
@@ -26,12 +24,21 @@ def search_kb(
     search_kb_button.config(text="Sending...")
 
     def background_task():
-        response = make_openai_request_with_question(question=text)["prompt"]
+        settings = Settings()
+
+        print(settings.openai_index)
+        
+        response = make_openai_request(question=text, config_file_path=openai_config_file_path, index_name=settings.openai_index)
+        prompt = ""
+        if response["error"] == True:
+            prompt = response["err"]
+        else:
+            prompt = response["prompt"]
 
         # Update gui safely
         def update_gui():
             textbox.delete("1.0", "end")  # Clear previous text
-            textbox.insert("1.0", response)
+            textbox.insert("1.0", prompt)
             search_kb_button.config(text=button_old_text)
 
         # Update gui in the main thread
@@ -40,3 +47,4 @@ def search_kb(
     # Run background thread
     thread = threading.Thread(target=background_task)
     thread.start()
+

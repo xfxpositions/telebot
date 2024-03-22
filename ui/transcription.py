@@ -27,7 +27,7 @@ def init_transcription(deepgram, settings: Settings, transcription_text):
         toggle_transcription = init_live_transcription(
             deepgram,
             stream_url=audio_stream_url,
-            language="tr",
+            language="en",
             textbox=transcription_text,
             toggle_event=toggle_event,
         )
@@ -64,7 +64,7 @@ def setup_transcription_frame(root, settings):
     transcription_text = tk.Text(transcription_frame)
     transcription_text.insert(
         tk.END,
-        "Merhabalar, ben Mahmut Yazılımdan arıyorum.\nBilgisayarımda Logo ERP vardı fakat bugün giriş yapamıyorum. Bana yardımcı olur musunuz?",
+        "Please start the transcription..",
     )
     transcription_text.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
     transcription_frame.grid_rowconfigure(0, weight=1)

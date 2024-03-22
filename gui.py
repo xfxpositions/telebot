@@ -32,6 +32,8 @@ root.grid_rowconfigure(0, weight=1)
 root.grid_columnconfigure(0, weight=1)
 root.grid_columnconfigure(1, weight=1)
 
+center_window(root)
+
 # load settings
 settings = Settings()
 
@@ -42,8 +44,6 @@ settings = Settings()
 documentation_path = os.path.join("documentation", "documentation.pdf")
 
 # Defining Frames
-
-# First main frame (left side)
 
 # Second main frame (right side)
 frame2 = tk.Frame(root, width=400, height=600)
@@ -58,6 +58,9 @@ frame2_upper.pack(expand=False, fill='both', side='top')
 frame2_lower = tk.Frame(frame2, width=400, height=400)
 frame2_lower.pack(expand=True, fill='both', side='bottom')
 
+# center the window at the start
+center_window(root)
+
 # COMPONENTS
 # --------------------------
 
@@ -66,6 +69,7 @@ prompt_message_text, prompt_message_frame = setup_prompt_frame(frame2_lower)
 kb_search_text = setup_kbase_frame(frame2_upper, prompt_message_text)
 setup_menubar(root, documentation_path)
 setup_buttons(root, documentation_path, transcription_text, kb_search_text, prompt_message_text, prompt_message_frame)
+center_window(root)
 
 if __name__ == "__main__":
     root.mainloop()
