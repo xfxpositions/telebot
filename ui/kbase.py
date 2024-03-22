@@ -7,7 +7,7 @@ def setup_kbase_frame(root, prompt_message_text):
     kbase_frame.pack(fill="both", expand=True, padx=10, pady=10)
     
     # KB search textbox setup
-    kb_search_text = tk.Text(kbase_frame, height=3)
+    kb_search_text = tk.Text(kbase_frame, height=5)
     kb_search_text.insert(tk.END, "Please type your issue here..")
     kb_search_text.pack(fill="both", expand=True, padx=5, pady=5)
     
