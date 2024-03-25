@@ -3,12 +3,15 @@ import tkinter as tk
 
 # Copies the content of the transcription_text widget to the clipboard.
 def copy_text(prompt_message_frame, error_message_text):
-    # Get the selected text in prompt message
-    selected_text = prompt_message_frame.selection_get()
+    try:
+        # Get the selected text in prompt message
+        selected_text = prompt_message_frame.selection_get()
 
-    # Delete and copy to error message prompt
-    error_message_text.delete(1.0, tk.END)
-    error_message_text.insert(tk.END, selected_text)
+        # Delete and copy to error message prompt
+        error_message_text.delete(1.0, tk.END)
+        error_message_text.insert(tk.END, selected_text)
+    except Exception as e:
+        return
 
 
 # Clears the content of the transcription_text and error_message_text widgets.
