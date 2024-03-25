@@ -6,47 +6,38 @@ import pyperclip
 from utils.general import center_window  # Ensure pyperclip is installed
 
 def view_log_content(log_text_widget, log_file_path):
-    """Open and display the content of a log file in the ScrolledText widget."""
-    log_text_widget.delete(1.0, tk.END)  # Clear the current content
+    log_text_widget.delete(1.0, tk.END)
     with open(log_file_path, "r") as file:
-        log_text_widget.insert(tk.END, file.read())  # Add file content to the widget
+        log_text_widget.insert(tk.END, file.read())
 
 def open_logs_window(root, logs_directory="logs"):
     logs_window = tk.Toplevel(root)
     logs_window.title("Debug Logs")
-    logs_window.geometry("900x450")
+    logs_window.geometry("1000x450")
     logs_window.maxsize(1200, 650)
     logs_window.resizable(False, False)
     center_window(logs_window)
 
-    # Use PanedWindow for resizable main content
     main_frame = tk.PanedWindow(logs_window, orient=tk.HORIZONTAL)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Widget to list log files
-    log_listbox = tk.Listbox(main_frame)
-    main_frame.add(log_listbox, stretch="always")
+    # Increase width and add a gap using the 'sashpad' parameter of the PanedWindow
+    log_listbox = tk.Listbox(main_frame, width=40)  # Increased width
+    main_frame.add(log_listbox, stretch="never", padx=10)  # Added padx for gap
 
-    # A new frame to contain the log_text_widget and its horizontal scrollbar
     text_frame = tk.Frame(main_frame)
     main_frame.add(text_frame, stretch="always")
 
-    # Widget to display the content of log files, without adding scrollbar yet
     log_text_widget = scrolledtext.ScrolledText(text_frame, font=('Courier', 10), wrap=tk.NONE)
     log_text_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-    # Create and configure a horizontal scrollbar for the log_text_widget
     h_scrollbar = tk.Scrollbar(text_frame, orient=tk.HORIZONTAL, command=log_text_widget.xview)
     log_text_widget.config(xscrollcommand=h_scrollbar.set)
-    h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)  # Place the scrollbar directly below the text widget
+    h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
 
-    # Frame for buttons, adjust to ensure visibility without resizing
     buttons_frame = tk.Frame(logs_window)
-    buttons_frame.pack(fill=tk.X, side=tk.BOTTOM)  # Adjusted to fill horizontally
-
-    # Adjust grid layout to align buttons to the right
-    buttons_frame.columnconfigure(0, weight=1)  # Add this line to push buttons to the right
-
+    buttons_frame.pack(fill=tk.X, side=tk.BOTTOM)
+    buttons_frame.columnconfigure(0, weight=1)
 
     def copy_logs():
         try:
@@ -64,15 +55,30 @@ def open_logs_window(root, logs_directory="logs"):
             log_listbox.select_set(0)
             view_log_content(log_text_widget, os.path.join(logs_directory, log_files[0]))
 
-    # Buttons with adjusted placement to ensure right alignment
+    def delete_log_entry():
+        selection = log_listbox.curselection()
+        if selection:
+            index = selection[0]
+            if index == 0:
+                messagebox.showinfo("Action Forbidden", "Cannot delete the first log entry as it's possibly still writing.", parent=logs_window)
+                return
+            response = messagebox.askyesno("Confirm Deletion", "Do you really want to delete this log file?", parent=logs_window)
+            if response:
+                log_file = log_listbox.get(index)
+                os.remove(os.path.join(logs_directory, log_file))
+                reload_logs()
+
     copy_button = tk.Button(buttons_frame, text="Copy Logs", command=copy_logs)
     copy_button.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
 
     reload_button = tk.Button(buttons_frame, text="Reload", command=reload_logs)
     reload_button.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
 
+    delete_button = tk.Button(buttons_frame, text="Delete Log Entry", command=delete_log_entry)
+    delete_button.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
+
     close_button = tk.Button(buttons_frame, text="Close", command=lambda: logs_window.destroy())
-    close_button.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
+    close_button.grid(row=0, column=4, sticky="ew", padx=5, pady=5)
 
     def on_log_select(event):
         selection = event.widget.curselection()
