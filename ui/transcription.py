@@ -27,7 +27,7 @@ def init_transcription(deepgram, settings: Settings, transcription_text):
         toggle_transcription = init_live_transcription(
             deepgram,
             stream_url=audio_stream_url,
-            language="en",
+            language="tr",
             textbox=transcription_text,
             toggle_event=toggle_event,
         )
