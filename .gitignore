@@ -6,3 +6,6 @@ voicemeeter-test.py
 build
 gui.spec
 *.spec
+openai_config.json
+logs
+dist
