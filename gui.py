@@ -3,6 +3,8 @@ from ui.buttons import setup_buttons
 from ui.kbase import setup_kbase_frame
 from ui.prompt import setup_prompt_frame
 from ui.transcription import setup_transcription_frame
+from utils.logger import init_logger
+
 from utils.general import (
     load_settings,
     center_window,
@@ -12,9 +14,13 @@ import pyaudio
 from ui.menubar import setup_menubar
 from ui.settings import *
 from utils.settings import Settings
+from tkinter import messagebox
+from ui.first_run_window import FirstRunWindow
 
 # CONFIG
 # -------------------------
+
+init_logger()
 
 # Create main window
 root = tk.Tk()
@@ -36,6 +42,7 @@ center_window(root)
 
 # load settings
 settings = Settings()
+
 
 # VARIABLES
 # -------------------------
@@ -62,7 +69,7 @@ frame2_lower.pack(expand=True, fill='both', side='bottom')
 center_window(root)
 
 # COMPONENTS
-# --------------------------
+# -------------------------- 
 
 transcription_text = setup_transcription_frame(root, settings)
 prompt_message_text, prompt_message_frame = setup_prompt_frame(frame2_lower)
@@ -70,6 +77,9 @@ kb_search_text = setup_kbase_frame(frame2_upper, prompt_message_text)
 setup_menubar(root, documentation_path)
 setup_buttons(root, documentation_path, transcription_text, kb_search_text, prompt_message_text, prompt_message_frame)
 center_window(root)
+
+if settings.first_run:
+    FirstRunWindow(root)
 
 if __name__ == "__main__":
     root.mainloop()
