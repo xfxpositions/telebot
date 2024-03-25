@@ -14,6 +14,7 @@ class Settings:
         self.port = "Auto"
         self.openai_config_path = "openai_config.json"
         self.documentation_path = "documenatation/documentation.pdf"
+        self.first_run = True
 
         self.openai_index = "indexbuluterpdys"
 
@@ -32,6 +33,7 @@ class Settings:
                 self.openai_index = settings.get("openai_index")
 
                 self.documentation_path = settings.get("documentation_path")
+                self.first_run = settings.get("first_run")
 
                 self.port = settings.get("port", "Auto")
         except FileNotFoundError:
@@ -44,6 +46,7 @@ class Settings:
             "output_device": self.output_device,
             "input_device_index": self.input_device_index,
             "output_device_index": self.output_device_index,
+            "first_run": self.first_run,
 
             "openai_config_path": self.openai_config_path,
             "openai_index": self.openai_index,
