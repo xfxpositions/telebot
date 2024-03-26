@@ -9,3 +9,5 @@ gui.spec
 openai_config.json
 logs
 dist
+nsi_build
+nsi_inputfiles
