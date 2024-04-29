@@ -1,5 +1,9 @@
 # Initializes transcription and starts audio stream
-from utils.transcription import start_audio_server, init_live_transcription, init_deepgram
+from utils.transcription import (
+    start_audio_server,
+    init_live_transcription,
+    init_deepgram,
+)
 import tkinter as tk
 from threading import Event
 from utils.settings import Settings
@@ -14,6 +18,7 @@ first_run = True
 
 # Initialize deepgram client
 deepgram = init_deepgram()
+
 
 def init_transcription(deepgram, settings: Settings, transcription_text):
     global toggle_event, toggle_transcription
@@ -34,7 +39,9 @@ def init_transcription(deepgram, settings: Settings, transcription_text):
 
 
 # Starts or stops transcription based on current state
-def start_transcription(transcription_text: tk.Text, start_stop_button: tk.Button, settings):
+def start_transcription(
+    transcription_text: tk.Text, start_stop_button: tk.Button, settings
+):
     global transcription_running, first_run, toggle_event
     # clear the transcription text
     transcription_text.delete("1.0", tk.END)
@@ -71,16 +78,20 @@ def setup_transcription_frame(root, settings):
     transcription_frame.grid_columnconfigure(0, weight=1)
 
     # Scrollbar for the transcription text
-    scrollbar = tk.Scrollbar(transcription_frame, orient="vertical", command=transcription_text.yview)
+    scrollbar = tk.Scrollbar(
+        transcription_frame, orient="vertical", command=transcription_text.yview
+    )
     scrollbar.grid(row=0, column=1, sticky="ns")
     transcription_text.config(yscrollcommand=scrollbar.set)
 
     # Position buttons appropriately
     start_stop_button = tk.Button(
-        transcription_frame, text="Start Transcription", command=lambda: start_transcription(transcription_text, start_stop_button, settings)
+        transcription_frame,
+        text="Start Transcription",
+        command=lambda: start_transcription(
+            transcription_text, start_stop_button, settings
+        ),
     )
     start_stop_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
 
     return transcription_text
-
-

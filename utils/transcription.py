@@ -7,13 +7,13 @@ import httpx
 import threading
 import os
 from dotenv import load_dotenv
-import pyaudio
 from flask import Flask, Response, render_template
 import tkinter as tk
 from threading import Event
 import sounddevice as sd
 import socket
 from contextlib import closing
+import pyaudiowpatch as pyaudio
 
 
 # Loads environment variables and initializes DeepgramClient with API key.
@@ -37,7 +37,6 @@ def init_live_transcription(
     toggle_event: threading.Event,
 ):
     print("LIVE TRANSCRIPTION FUNCTION WORKING")
-   
 
     # STEP 2: Define a function to handle streaming and transcription
     def handle_stream():
@@ -51,6 +50,7 @@ def init_live_transcription(
 
             if textbox is not None:
                 textbox.insert(tk.END, f"\n{sentence}")
+                textbox.see(tk.END)
 
         def on_metadata(self, metadata, **kwargs):
             return
@@ -126,17 +126,49 @@ def gen_wav_header(sampleRate, bitsPerSample, channels):
 
 # Creates a generator that captures live audio from a specified device and yields data chunks.
 def sound_stream(device_index: int):
-    # start Recording
 
     audio = pyaudio.PyAudio()
 
+    """
+        Create PyAudio instance via context manager.
+        Spinner is a helper class, for `pretty` output
+        """
+    try:
+        # Get default WASAPI info
+        wasapi_info = audio.get_host_api_info_by_type(pyaudio.paWASAPI)
+    except OSError:
+        print("Looks like WASAPI is not available on the system. Exiting...")
+        exit()
+
+    # Get default WASAPI speakers
+    default_speakers = audio.get_device_info_by_index(
+        wasapi_info["defaultOutputDevice"]
+    )
+    if not default_speakers["isLoopbackDevice"]:
+        for loopback in audio.get_loopback_device_info_generator():
+            """
+            Try to find loopback device with same name(and [Loopback suffix]).
+            Unfortunately, this is the most adequate way at the moment.
+            """
+            if default_speakers["name"] in loopback["name"]:
+                default_speakers = loopback
+                break
+    else:
+        print(
+            "Default loopback output device not found.\n\nRun `python -m pyaudiowpatch` to check available devices.\nExiting...\n"
+        )
+        exit()
+
+    print(f"Recording from: ({default_speakers['index']}){default_speakers['name']}")
+
+    # start Recording
+
     # Define audio config
     FORMAT = pyaudio.paInt16
-    CHANNELS = 1
-    RATE = 16000
-    CHUNK = 1024
+    CHANNELS = default_speakers["maxInputChannels"]
+    RATE = int(default_speakers["defaultSampleRate"])
+    CHUNK = 512
     BITS_PER_SAMPLE = 16
-    DEVICE_INDEX = device_index
 
     # Generate header
     wav_header = gen_wav_header(RATE, BITS_PER_SAMPLE, CHANNELS)
@@ -146,9 +178,9 @@ def sound_stream(device_index: int):
         format=FORMAT,
         channels=CHANNELS,
         rate=RATE,
-        input=True,
-        input_device_index=DEVICE_INDEX,
         frames_per_buffer=CHUNK,
+        input=True,
+        input_device_index=default_speakers["index"],
     )
 
     print("recording...")
@@ -188,18 +220,20 @@ def init_stream_audio(port, device_index: int, server_ready_event):
 
     # Finds and returns information about the preferred audio host API.
 
+
 # Finds an returns a free port
 def find_free_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('', 0))
+        s.bind(("", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
+
 
 # Starts the audio server
 def start_audio_server(port, device_index: int):
 
     if port == "Auto":
-        port = find_free_port() 
+        port = find_free_port()
 
     server_ready_event = threading.Event()
     stream_thread = threading.Thread(
@@ -242,8 +276,10 @@ def list_audio_devices():
     devices = []
     for i in range(p.get_device_count()):
         device_info = p.get_device_info_by_index(i)
-        if device_info['maxInputChannels'] > 0 and device_info['hostApi'] == 0:  # Checks if the device is an input device
-            entry = (device_info['name'], device_info['index'])
+        if (
+            device_info["maxInputChannels"] > 0 and device_info["hostApi"] == 0
+        ):  # Checks if the device is an input device
+            entry = (device_info["name"], device_info["index"])
             devices.append(entry)
     p.terminate()
     return devices
@@ -255,13 +291,13 @@ def list_audio_output_devices():
     devices = []
     for i in range(p.get_device_count()):
         device_info = p.get_device_info_by_index(i)
-        if device_info['maxOutputChannels'] > 0 and device_info['hostApi'] == 0:  # Checks if the device is an input device
-            entry = (device_info['name'], device_info['index'])
+        if (
+            device_info["maxOutputChannels"] > 0 and device_info["hostApi"] == 0
+        ):  # Checks if the device is an input device
+            entry = (device_info["name"], device_info["index"])
             devices.append(entry)
     p.terminate()
     return devices
-
-
 
 
 # Interactively allows the user to select an audio input device.

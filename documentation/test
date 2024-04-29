@@ -1,0 +1,16 @@
+2024-04-26 10:30:26 - INFO - {'type': 'Exception', 'description': 'Unknown error _listening', 'message': 'received 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001; then sent 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001', 'variant': ''}
+2024-04-26 10:30:26 - ERROR - Exception in _listening: received 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001; then sent 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001
+2024-04-26 10:30:26 - INFO - 
+2024-04-26 10:30:26 - INFO - 
+2024-04-26 10:30:26 - INFO - {'type': 'Exception', 'description': 'Unknown error _listening', 'message': 'received 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001; then sent 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001', 'variant': ''}
+2024-04-26 10:30:26 - ERROR - Exception in _listening: received 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001; then sent 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001
+2024-04-26 10:30:26 - INFO - 
+2024-04-26 10:30:26 - INFO - 
+2024-04-26 10:30:26 - INFO - {'type': 'Exception', 'description': 'Unknown error _listening', 'message': 'received 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001; then sent 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001', 'variant': ''}
+2024-04-26 10:30:26 - ERROR - Exception in _listening: received 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001; then sent 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001
+2024-04-26 10:30:26 - INFO - 
+2024-04-26 10:30:26 - INFO - 
+2024-04-26 10:30:26 - INFO - {'type': 'Exception', 'description': 'Unknown error _listening', 'message': 'received 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001; then sent 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001', 'variant': ''}
+2024-04-26 10:30:26 - ERROR - Exception in _listening: received 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001; then sent 1011 (internal error) Deepgram did not receive audio data or a text message within the timeout window. See https://dpgr.am/net0001
+2024-04-26 10:30:26 - INFO - 
+2024-04-26 10:30:26 - INFO - 
