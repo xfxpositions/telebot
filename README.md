@@ -1,6 +1,8 @@
-# Logo Telebot DEMO
+# Xfxpositions Telebot
 
-## Warning: This repository is private, if you see this in somewhere public. Please email to yusuf.karaca@logo.com.tr
+## Build
+
+`build.bat`
 
 ## Installation:
 
@@ -46,4 +48,4 @@ made by love by
 
 ## License
 
-All rights reserved to the Logo Software. Please check out the LICENSE file
+Licensed under MIT license
