@@ -12,3 +12,9 @@ dist
 nsi_build
 nsi_inputfiles
 tasks.json
+secrets.key
+secrets.dat
+secrets.json
+settings.json
+telebot.exe.spec
+kirwe.py
