@@ -6,11 +6,9 @@ from ui.transcription import setup_transcription_frame
 from utils.logger import init_logger
 
 from utils.general import (
-    load_settings,
     center_window,
 )
 import os
-import pyaudio
 from ui.menubar import setup_menubar
 from ui.settings import *
 from utils.settings import Settings
@@ -59,23 +57,30 @@ frame2.grid_propagate(False)  # Ensures the frame maintains its own size
 
 # Upper frame within the second frame
 frame2_upper = tk.Frame(frame2, width=400, height=200)
-frame2_upper.pack(expand=False, fill='both', side='top')
+frame2_upper.pack(expand=False, fill="both", side="top")
 
 # Lower frame within the second frame
 frame2_lower = tk.Frame(frame2, width=400, height=400)
-frame2_lower.pack(expand=True, fill='both', side='bottom')
+frame2_lower.pack(expand=True, fill="both", side="bottom")
 
 # center the window at the start
 center_window(root)
 
 # COMPONENTS
-# -------------------------- 
+# --------------------------
 
 transcription_text = setup_transcription_frame(root, settings)
 prompt_message_text, prompt_message_frame = setup_prompt_frame(frame2_lower)
 kb_search_text = setup_kbase_frame(frame2_upper, prompt_message_text)
 setup_menubar(root, documentation_path)
-setup_buttons(root, documentation_path, transcription_text, kb_search_text, prompt_message_text, prompt_message_frame)
+setup_buttons(
+    root,
+    documentation_path,
+    transcription_text,
+    kb_search_text,
+    prompt_message_text,
+    prompt_message_frame,
+)
 center_window(root)
 
 if settings.first_run:
