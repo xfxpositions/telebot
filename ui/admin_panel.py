@@ -6,6 +6,48 @@ from tkinter import messagebox  # Import messagebox for error handling
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+# Constants
+ENTRANCE_PASSWORD = "deneme"
+
+
+class LoginWindow:
+    def __init__(self, parent):
+        self.parent = parent
+        self.login_window = tk.Toplevel(parent)
+        self.setup_ui()
+        self.login_window.grab_set()
+        self.login_window.lift()
+
+    def setup_ui(self):
+        """Setup the login window UI components."""
+        center_window(self.login_window)
+        self.login_window.title("Admin Login")
+
+        ttk.Label(self.login_window, text="Enter Password:").pack(pady=10)
+        self.password_entry = ttk.Entry(self.login_window, show="*")
+        self.password_entry.pack(pady=5)
+        self.password_entry.focus_set()
+        self.login_window.geometry("200x200")
+        self.login_window.resizable(False, False)
+
+        submit_button = ttk.Button(
+            self.login_window, text="Submit", command=self.check_password
+        )
+        submit_button.pack(pady=10)
+        self.password_entry.bind("<Return>", self.check_password)
+
+    def check_password(self, event=None):
+        """Check the entered password against the defined constant."""
+        entered_password = self.password_entry.get()
+        if entered_password == ENTRANCE_PASSWORD:
+            self.login_window.destroy()
+            open_admin_panel_window(self.parent)
+        else:
+            messagebox.showerror("Error", "Incorrect Password")
+            self.password_entry.delete(
+                0, "end"
+            )  # Clear the input field for a new attempt
+
 
 def start_watcher(file_path, update_func):
     class SettingsChangeHandler(FileSystemEventHandler):
@@ -37,6 +79,8 @@ def open_admin_panel_window(root: tk.Tk):
     admin_panel = tk.Toplevel(root)
     admin_panel.title("Admin Panel")
     admin_panel.geometry("600x500")  # Adjusted for better spacing
+    admin_panel.grab_set()
+    admin_panel.lift()
     center_window(admin_panel)
 
     secrets_manager = SecretsManager()
@@ -69,7 +113,7 @@ def open_admin_panel_window(root: tk.Tk):
     # Initialize watchdog
     start_watcher(
         secrets_manager.settings_filename,
-        lambda: update_combobox(secrets_manager, openai_config_combobox),
+        lambda: update_combobox(),
     )
 
     # Buttons
@@ -78,12 +122,6 @@ def open_admin_panel_window(root: tk.Tk):
         text="Add New OpenAI Config",
         command=lambda: add_new_openai_config(),
     ).pack(side="left", expand=True, padx=5, pady=5)
-    update_secrets_button = ttk.Button(
-        button_frame,
-        text="Update Secrets",
-        command=lambda: update_secrets(),
-    )
-    update_secrets_button.pack(side="left", expand=True, padx=5, pady=5)
 
     # Button for deleting OpenAI Config
     delete_button = ttk.Button(
@@ -105,13 +143,20 @@ def open_admin_panel_window(root: tk.Tk):
     control_frame = ttk.Frame(admin_panel, padding="10")
     control_frame.pack(fill="x", side="bottom", anchor="e")
 
+    update_secrets_button = ttk.Button(
+        control_frame,
+        text="Reload Secrets",
+        command=lambda: update_secrets(),
+    )
+    update_secrets_button.pack(side="left", expand=False, fill="x", padx=5, pady=5)
+
     apply_button = ttk.Button(
         control_frame, text="Apply", command=lambda: update_secrets()
     )
-    apply_button.pack(side="right", padx=5, pady=5)  # Changed side to "right"
+    apply_button.pack(side="right", expand=False, fill="x", padx=5, pady=5)
 
     exit_button = ttk.Button(control_frame, text="Exit", command=lambda: exit_prompt())
-    exit_button.pack(side="right", padx=5, pady=5)  # Changed side to "right"
+    exit_button.pack(side="right", expand=False, fill="x", padx=5, pady=5)
 
     def apply_changes():
         # Function to apply changes
@@ -167,8 +212,26 @@ def open_admin_panel_window(root: tk.Tk):
                 update_combobox()
             edit_window.destroy()
 
+        def discard_changes():
+            admin_panel.grab_set()
+            admin_panel.lift()
+            edit_window.grab_set()
+            edit_window.lift()
+
+            response = messagebox.askyesno("Question", "Do you want to proceed?")
+            if response:
+                print("User clicked 'Yes'.")
+                edit_window.destroy()
+            else:
+                print("User clicked 'No'.")
+
         save_button = ttk.Button(edit_window, text="Save Changes", command=save_changes)
         save_button.pack()
+
+        quit_button = ttk.Button(
+            edit_window, text="Discard Changes", command=discard_changes
+        )
+        quit_button.pack()
 
     def delete_openai_config():
         current_index = openai_config_combobox.current()
@@ -222,8 +285,11 @@ def open_admin_panel_window(root: tk.Tk):
             openai_config_combobox.set("")  # Clear combobox if no items left
 
         # Button to update secrets
+        messagebox.showinfo(title="Success", message="Secrets Refreshed Successfully")
 
     def update_secrets():
+        messagebox.showinfo(title="Success", message="Secrets Updated Successfully")
+
         # Update Deepgram API key
         new_deepgram_api_key = deepgram_api_key_entry.get()
 
@@ -233,43 +299,15 @@ def open_admin_panel_window(root: tk.Tk):
         # Call SecretsManager method to update secrets
         secrets_manager.update_secrets(new_deepgram_api_key, openai_config_index)
 
-        # Save settings to file after updating
-        secrets_manager.to_json(secrets_manager.settings_filename)
+        # Save settings to file after updating as encryped raw json
+        secrets_manager.to_json(secrets_manager.settings_filename, encryped=True)
+        # Also save as uncryped raw json
+        secrets_manager.to_json(secrets_manager.plain_settings_filename, encryped=False)
 
         # Update the combobox to reflect changes
         update_combobox()
 
+        # Set unsaved changes to True
         unsaved_changes = True
 
-    def prompt_password():
-        password_window = tk.Toplevel(root)
-        password_window.title("Authentication Required")
-        password_window.geometry("300x150")
-        center_window(password_window)
-        password_window.resizable(False, False)
-
-        ttk.Label(password_window, text="Enter password:").pack(pady=10)
-        password_entry = ttk.Entry(password_window, show="*")
-        password_entry.pack(pady=5)
-
-        def check_password():
-            if password_entry.get() == "test123":
-                password_window.destroy()
-                show_admin_panel()
-            else:
-                messagebox.showerror("Error", "Incorrect password")
-
-        ttk.Button(password_window, text="Submit", command=check_password).pack(pady=10)
-
-    def show_admin_panel():
-        # All your admin panel code goes here, as previously defined
-        admin_panel = tk.Toplevel(root)
-        admin_panel.title("Admin Panel")
-        admin_panel.geometry("600x500")
-        center_window(admin_panel)
-        secrets_manager = SecretsManager()
-        config_frame = ttk.Frame(admin_panel, padding="10 10 10 10")
-        config_frame.pack(fill="x", expand=True)
-        ttk.Label(config_frame, text="Welcome to the Admin Panel").pack(pady=10)
-
-    prompt_password()
+        # Show a messagebox for dummy users make sure it's updated as well
