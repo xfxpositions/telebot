@@ -5,7 +5,7 @@ from tkinter import messagebox
 from utils.general import center_window, open_documentation, exit_app
 from ui.settings import open_settings_window
 from ui.logs import open_logs_window
-from ui.admin_panel import open_admin_panel_window
+from ui.admin_panel import LoginWindow
 
 
 # Menubar
@@ -68,9 +68,7 @@ def setup_menubar(root, documentation_path):
     menu_settings.add_command(
         label="Debug Console", command=lambda: open_logs_window(menu_settings)
     )
-    menu_settings.add_command(
-        label="Admin Panel", command=lambda: open_admin_panel_window(menu_settings)
-    )
+    menu_settings.add_command(label="Admin Panel", command=lambda: LoginWindow(root))
     menubar.add_cascade(label="Settings", menu=menu_settings)
 
     # Help menu
