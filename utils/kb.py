@@ -2,8 +2,10 @@ import tkinter as tk
 from utils.kbase import make_openai_request_with_question, make_openai_request
 import threading
 from utils.settings import Settings
+from utils.secretsmanager import SecretsManager
 
 openai_config_file_path = "openai_config.json"
+
 
 # Searches for the provided text in the knowledge base.
 def search_kb(
@@ -27,8 +29,7 @@ def search_kb(
         settings = Settings()
 
         print(settings.openai_index)
-        
-        response = make_openai_request(question=text, config_file_path=openai_config_file_path, index_name=settings.openai_index)
+        response = make_openai_request(question=text, index_name=settings.openai_index)
         prompt = ""
         if response["error"] == True:
             prompt = response["err"]
@@ -47,4 +48,3 @@ def search_kb(
     # Run background thread
     thread = threading.Thread(target=background_task)
     thread.start()
-
