@@ -9,13 +9,25 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
 
 class OpenAIConfig:
-    def __init__(self, name, apiKey, url, embeddingKey, searchKey, indexname):
+    def __init__(
+        self,
+        name,
+        apiKey,
+        url,
+        embeddingKey,
+        searchKey,
+        indexname,
+        endpoint="default_endpoint",
+        embeddingEndpoint="default_embedding_endpoint",
+    ):
         self.name = name
         self.apiKey = apiKey
         self.url = url
         self.embeddingKey = embeddingKey
         self.searchKey = searchKey
         self.indexname = indexname
+        self.endpoint = endpoint
+        self.embeddingEndpoint = embeddingEndpoint
 
 
 class SecretsManager:
@@ -27,7 +39,8 @@ class SecretsManager:
         self.openai_configs = []
 
         # Default settings JSON filename
-        self.settings_filename = "secrets.json"
+        self.settings_filename = "secrets.dat"
+        self.plain_settings_filename = "secrets.json"
 
         # Load settings from JSON file at startup
         self.load_settings(self.settings_filename)
@@ -58,7 +71,17 @@ class SecretsManager:
         # Save settings to file after updating
         self.to_json(self.settings_filename)
 
-    def to_json(self, file_path):
+    def to_unencrypted_json(self, file_path):
+        # Serialize the SecretsManager instance to JSON without encryption
+        data = {
+            "deepgram_api_key": self.deepgram_api_key,
+            "openai_configs": [vars(config) for config in self.openai_configs],
+        }
+        with open(file_path, "w") as file:
+            json.dump(data, file, indent=4)
+        print("Unencrypted settings saved.")
+
+    def to_json(self, file_path, encryped: bool = True):
         # Serialize the SecretsManager instance to JSON
         data = {
             "deepgram_api_key": self.deepgram_api_key,
@@ -100,6 +123,8 @@ class SecretsManager:
                 "default_embeddingKey",
                 "default_searchKey",
                 "default_indexname",
+                "default_endpoint",
+                "default_embedding_enpoint",
             )
         ]
 

@@ -14,6 +14,7 @@ import sounddevice as sd
 import socket
 from contextlib import closing
 import pyaudiowpatch as pyaudio
+from utils.secretsmanager import SecretsManager
 
 
 # Loads environment variables and initializes DeepgramClient with API key.
@@ -21,7 +22,11 @@ def init_deepgram():
 
     load_dotenv()
 
-    API_KEY = os.getenv("DG_API_KEY")
+    secrets = SecretsManager()
+
+    API_KEY = secrets.deepgram_api_key
+
+    print(API_KEY)
 
     deepgram = DeepgramClient(API_KEY)
 

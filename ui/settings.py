@@ -32,7 +32,7 @@ def open_settings_window(root):
     # Fetching the list of audio input and output devices
     audio_input_devices = list_audio_devices()
     audio_output_devices = list_audio_output_devices()
-    openai_indexs = list_openai_indexs(settings.openai_config_path)
+    openai_indexs = list_openai_indexs()
     import pyaudiowpatch as pyaudio
 
     audio = pyaudio.PyAudio()
