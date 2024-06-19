@@ -1,6 +1,5 @@
-# Logo Telebot DEMO
+# Telebot DEMO
 
-## Warning: This repository is private, if you see this in somewhere public. Please email to yusuf.karaca@logo.com.tr
 
 ## Installation:
 
@@ -41,8 +40,8 @@ python gui.py
 
 made by love by
 
-- Yusuf Karaca
-- Sinan Yalcin
+- Yusuf
+- Sinan
 
 ## License
 
